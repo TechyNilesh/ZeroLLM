@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/zerollm-logo-main.png" alt="ZeroLLM" width="400">
+  <img src="https://raw.githubusercontent.com/TechyNilesh/ZeroLLM/main/assets/zerollm-logo-main.png" alt="ZeroLLM" width="400">
 </p>
 
 <p align="center">
@@ -161,7 +161,7 @@ Run `zerollm list` to see curated models, or `zerollm recommend` to find the bes
 ## Architecture
 
 <p align="center">
-  <img src="assets/zerollm-architecture.png" alt="ZeroLLM Architecture" width="700">
+  <img src="https://raw.githubusercontent.com/TechyNilesh/ZeroLLM/main/assets/zerollm-architecture.png" alt="ZeroLLM Architecture" width="700">
 </p>
 
 ## License
