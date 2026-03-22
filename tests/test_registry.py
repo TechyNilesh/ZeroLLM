@@ -20,7 +20,7 @@ def test_cached_model_dataclass():
     m = CachedModel(
         hf_repo="Qwen/Qwen3.5-4B-GGUF",
         filename="Qwen3.5-4B-Q4_K_M.gguf",
-        local_path="/fake/path.gguf",
+        local_path="huggingface://Qwen/Qwen3.5-4B",
         size_mb=2400,
         context_length=32768,
         supports_tools=True,

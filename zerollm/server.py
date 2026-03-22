@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from zerollm.backend import LlamaBackend
+from zerollm.backend import HFBackend
 from zerollm.hardware import detect
 from zerollm.resolver import resolve
 
@@ -63,8 +63,8 @@ class Server:
         self.model_name = resolved.name
         hw = detect()
 
-        self.backend = LlamaBackend(
-            model_path=resolved.path,
+        self.backend = HFBackend(
+            model_name=resolved.model_id,
             context_length=resolved.context_length,
             power=power,
             hw=hw,

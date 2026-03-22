@@ -6,7 +6,7 @@ from typing import Generator
 
 from rich.console import Console
 
-from zerollm.backend import LlamaBackend
+from zerollm.backend import HFBackend
 from zerollm.hardware import detect
 from zerollm.memory import Memory
 from zerollm.resolver import resolve
@@ -62,8 +62,8 @@ class Chat:
         self.hw = detect()
 
         # Create backend
-        self.backend = LlamaBackend(
-            model_path=resolved.path,
+        self.backend = HFBackend(
+            model_name=resolved.model_id,
             context_length=resolved.context_length,
             power=power,
             hw=self.hw,
@@ -96,6 +96,7 @@ class Chat:
         )
 
         self.memory.add("assistant", response)
+        self.memory.maybe_summarize(backend=self.backend)
         return response
 
     def stream(self, prompt: str) -> Generator[str, None, None]:

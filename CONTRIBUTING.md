@@ -22,7 +22,6 @@ uv venv && uv sync
 ## What to work on
 
 - Check [Issues](https://github.com/TechyNilesh/ZeroLLM/issues) for open tasks
-- Add new models to `zerollm/registry.json`
 - Improve test coverage
 - Fix bugs
 - Add examples
@@ -31,18 +30,17 @@ uv venv && uv sync
 
 ```
 zerollm/
-├── chat.py          # Chat class
-├── agent.py         # Agent + sub-agents
+├── chat.py          # Chat class (ask, stream, REPL)
+├── agent.py         # Agent, sub-agents, SharedContext, guardrails, ReAct
 ├── server.py        # OpenAI-compatible API
-├── finetune.py      # LoRA fine-tuning
-├── rag.py           # RAG with SQLite + sqlite-vec
-├── backend.py       # llama-cpp-python wrapper
-├── resolver.py      # Model resolution (registry/local/fine-tuned)
-├── registry.py      # Model registry loader
-├── registry.json    # Curated model list
-├── hardware.py      # Hardware detection
-├── memory.py        # Conversation memory
-├── dataloader.py    # File reader (CSV/JSONL/PDF/DOCX)
+├── finetune.py      # LoRA fine-tuning via peft
+├── rag.py           # RAG with SQLite + sqlite-vec + reranking
+├── backend.py       # HuggingFace transformers backend
+├── resolver.py      # Model resolution (HF repo / local dir / fine-tuned)
+├── registry.py      # Local cache manager (tracks downloaded models)
+├── hardware.py      # Hardware detection (CPU/GPU/RAM)
+├── memory.py        # Session + persistent memory with auto-summarization
+├── dataloader.py    # File reader (CSV/JSONL/TXT/PDF/DOCX)
 ├── cli.py           # CLI commands
 └── __init__.py      # Public API
 ```
@@ -63,22 +61,13 @@ uv run pytest tests/test_chat.py  # single file
 
 Tests that need a real model are skipped by default. Unit tests use mocked backends.
 
-## Adding a model to the registry
+## Models
 
-Edit `zerollm/registry.json`:
+ZeroLLM works with any HuggingFace model — no curated registry. Just pass the HF repo name:
 
-```json
-"org/Model-Name": {
-  "hf_repo": "org/Model-Name-GGUF",
-  "hf_base_repo": "org/Model-Name",
-  "filename": "model-name-Q8_0.gguf",
-  "size_mb": 640,
-  "min_ram_gb": 3,
-  "context_length": 32768,
-  "chat_template": "chatml",
-  "supports_tools": true,
-  "license": "Apache-2.0"
-}
+```python
+Chat("Qwen/Qwen3.5-4B")
+Chat("microsoft/Phi-3-mini-4k-instruct")
 ```
 
-Verify the GGUF filename exists on HuggingFace before submitting.
+Models are downloaded and cached automatically by HuggingFace Hub.

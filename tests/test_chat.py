@@ -11,14 +11,14 @@ def _mock_chat(**kwargs):
 
     mock_resolved = ResolvedModel(
         name=kwargs.get("model", "Qwen/Qwen3.5-4B"),
-        path="/fake/model.gguf",
+        model_id="Qwen/Qwen3.5-4B",
         context_length=8192,
-        source="registry",
+        source="huggingface",
         supports_tools=True,
     )
 
     with patch("zerollm.chat.resolve", return_value=mock_resolved), \
-         patch("zerollm.chat.LlamaBackend") as mock_backend, \
+         patch("zerollm.chat.HFBackend") as mock_backend, \
          patch("zerollm.chat.console"):
 
         mock_instance = MagicMock()

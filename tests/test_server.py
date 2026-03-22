@@ -11,14 +11,14 @@ def _create_test_app():
 
     mock_resolved = ResolvedModel(
         name="Qwen/Qwen3.5-4B",
-        path="/fake/model.gguf",
+        model_id="Qwen/Qwen3.5-4B",
         context_length=8192,
-        source="registry",
+        source="huggingface",
         supports_tools=True,
     )
 
     with patch("zerollm.server.resolve", return_value=mock_resolved), \
-         patch("zerollm.server.LlamaBackend") as mock_backend:
+         patch("zerollm.server.HFBackend") as mock_backend:
 
         mock_instance = MagicMock()
         mock_instance.generate.return_value = "Hello from ZeroLLM!"
