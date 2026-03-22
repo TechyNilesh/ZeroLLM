@@ -8,10 +8,10 @@
 
 <p align="center">
   <a href="https://github.com/TechyNilesh/ZeroLLM/actions"><img src="https://img.shields.io/github/actions/workflow/status/TechyNilesh/ZeroLLM/ci.yml?branch=main&style=for-the-badge" alt="CI"></a>
-  <a href="https://pypi.org/project/zerollm/"><img src="https://img.shields.io/pypi/v/zerollm?style=for-the-badge" alt="PyPI"></a>
+  <a href="https://pypi.org/project/zerollm-kit/"><img src="https://img.shields.io/pypi/v/zerollm-kit?style=for-the-badge" alt="PyPI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License"></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.10+-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.10+"></a>
-  <a href="https://pepy.tech/project/zerollm"><img src="https://img.shields.io/pepy/dt/zerollm?style=for-the-badge&label=Downloads" alt="Downloads"></a>
+  <a href="https://pepy.tech/project/zerollm-kit"><img src="https://img.shields.io/pepy/dt/zerollm-kit?style=for-the-badge&label=Downloads" alt="Downloads"></a>
 </p>
 
 ---
@@ -32,7 +32,7 @@ That's it. No config files, no model format headaches, no GPU drivers to manage.
 ## Install
 
 ```bash
-pip install zerollm
+pip install zerollm-kit
 ```
 
 ## Quick Start
