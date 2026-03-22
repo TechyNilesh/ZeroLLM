@@ -12,3 +12,4 @@ venv/
 .DS_Store
 *.gguf
 *.db
+PLAN.md
