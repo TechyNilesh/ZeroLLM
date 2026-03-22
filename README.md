@@ -12,6 +12,7 @@
   <a href="https://github.com/TechyNilesh/ZeroLLM/releases"><img src="https://img.shields.io/github/v/release/TechyNilesh/ZeroLLM?include_prereleases&style=for-the-badge" alt="Release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License"></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.10+-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.10+"></a>
+  <a href="https://pepy.tech/project/zerollm"><img src="https://img.shields.io/pepy/dt/zerollm?style=for-the-badge&label=Downloads" alt="Downloads"></a>
 </p>
 
 ---
