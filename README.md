@@ -22,7 +22,7 @@ One `pip install`. Auto-detects your hardware. Downloads the right model. You're
 ```python
 from zerollm import Chat
 
-bot = Chat("Qwen/Qwen3-0.6B")
+bot = Chat("Qwen/Qwen3.5-4B")
 print(bot.ask("What is the capital of France?"))
 ```
 
@@ -41,7 +41,7 @@ pip install zerollm-kit
 ```python
 from zerollm import Chat
 
-bot = Chat("Qwen/Qwen3-0.6B")
+bot = Chat("Qwen/Qwen3.5-4B")
 
 # Ask
 print(bot.ask("Explain quantum computing in one sentence"))
@@ -59,7 +59,7 @@ bot.chat()
 ```python
 from zerollm import Agent
 
-agent = Agent("Qwen/Qwen3-0.6B")
+agent = Agent("Qwen/Qwen3.5-4B")
 
 @agent.tool
 def get_weather(city: str) -> str:
@@ -78,7 +78,7 @@ researcher = Agent("Qwen/Qwen3-1.7B", name="researcher")
 def search(query: str) -> str:
     return f"Results for: {query}"
 
-main = Agent("Qwen/Qwen3-0.6B")
+main = Agent("Qwen/Qwen3.5-4B")
 main.add_agent("researcher", researcher, "Research any topic")
 
 main.ask("Research the latest AI trends")
@@ -89,7 +89,7 @@ main.ask("Research the latest AI trends")
 ```python
 from zerollm import Server
 
-Server("Qwen/Qwen3-0.6B", port=8080).serve()
+Server("Qwen/Qwen3.5-4B", port=8080).serve()
 ```
 
 OpenAI-compatible. Works with any client that speaks the OpenAI API.
@@ -99,7 +99,7 @@ OpenAI-compatible. Works with any client that speaks the OpenAI API.
 ```python
 from zerollm import FineTuner
 
-tuner = FineTuner("Qwen/Qwen3-0.6B")
+tuner = FineTuner("Qwen/Qwen3.5-4B")
 tuner.train("my_data.csv", epochs=3)
 tuner.save("my-bot")
 ```
@@ -118,7 +118,7 @@ Server("my-bot", port=8080).serve() # or serve it
 ```python
 from zerollm import RAG
 
-rag = RAG("Qwen/Qwen3-0.6B")
+rag = RAG("Qwen/Qwen3.5-4B")
 rag.add("docs.pdf")
 print(rag.ask("What is the refund policy?"))
 ```
@@ -129,8 +129,8 @@ Powered by SQLite + sqlite-vec. No external database needed.
 
 ```bash
 zerollm recommend                                          # best model for your hardware
-zerollm chat Qwen/Qwen3-0.6B          # interactive chat
-zerollm serve Qwen/Qwen3-0.6B         # start API server
+zerollm chat Qwen/Qwen3.5-4B          # interactive chat
+zerollm serve Qwen/Qwen3.5-4B         # start API server
 zerollm list                                               # all available models
 zerollm doctor                                             # diagnose setup
 ```
@@ -147,21 +147,35 @@ zerollm doctor                                             # diagnose setup
 
 ## Models
 
-Works with any GGUF model from Hugging Face. Pass the full HF model name or a local `.gguf` file:
+Works with **any GGUF model from HuggingFace**. No curated list. Just pass the HF repo name:
 
 ```python
-Chat("Qwen/Qwen3-0.6B")  # from registry
-Chat("/path/to/any-model.gguf")                # local file
-Chat("my-finetuned-bot")                       # your fine-tuned model
+Chat("Qwen/Qwen3.5-4B")                        # auto-finds GGUF, picks best quantization
+Chat("bartowski/Phi-3-mini-4k-instruct-GGUF")   # direct GGUF repo
+Chat("TheBloke/Mistral-7B-Instruct-v0.2-GGUF")  # any GGUF repo works
+Chat("/path/to/any-model.gguf")                  # local file
+Chat("my-finetuned-bot")                         # fine-tuned model
 ```
 
-Run `zerollm list` to see curated models, or `zerollm recommend` to find the best one for your hardware.
+Run `zerollm list` to see downloaded models, or `zerollm doctor` to check your setup.
 
 ## Architecture
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/TechyNilesh/ZeroLLM/main/assets/zerollm-architecture.png" alt="ZeroLLM Architecture" width="700">
 </p>
+
+> **Note:** ZeroLLM is in early alpha. Things will break, APIs may change, and some models might not load depending on your `llama-cpp-python` version. That's expected — we're iterating fast. If you hit an issue or have ideas, [open an issue](https://github.com/TechyNilesh/ZeroLLM/issues). Your feedback shapes what this becomes.
+
+## Star History
+
+<a href="https://www.star-history.com/?repos=TechyNilesh%2FZeroLLM&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/image?repos=TechyNilesh/ZeroLLM&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/image?repos=TechyNilesh/ZeroLLM&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/image?repos=TechyNilesh/ZeroLLM&type=date&legend=top-left" />
+ </picture>
+</a>
 
 ## License
 

@@ -1,55 +1,45 @@
-"""Tests for the model registry."""
+"""Tests for the cache manager (registry.py)."""
 
-import pytest
+import json
+from pathlib import Path
 
-from zerollm.registry import lookup, list_models, recommend_for
-
-
-def test_lookup_valid_model():
-    info = lookup("Qwen/Qwen3-0.6B")
-    assert info.name == "Qwen/Qwen3-0.6B"
-    assert info.size_mb == 400
-    assert info.supports_tools is True
-
-
-def test_lookup_all_models():
-    models = list_models()
-    assert len(models) == 5
-    names = [m.name for m in models]
-    assert "Qwen/Qwen3-0.6B" in names
-    assert "TinyLlama/TinyLlama-1.1B-Chat-v1.0" in names
-    assert "microsoft/Phi-3-mini-4k-instruct" in names
+from zerollm.registry import (
+    CachedModel,
+    register_download,
+    lookup_cache,
+    remove_from_cache,
+    list_cached,
+    cache_size_mb,
+    _load_index,
+    _save_index,
+    CACHE_INDEX,
+)
 
 
-def test_lookup_invalid_model():
-    with pytest.raises(ValueError, match="not found"):
-        lookup("nonexistent-model")
+def test_cached_model_dataclass():
+    m = CachedModel(
+        hf_repo="Qwen/Qwen3.5-4B-GGUF",
+        filename="Qwen3.5-4B-Q4_K_M.gguf",
+        local_path="/fake/path.gguf",
+        size_mb=2400,
+        context_length=32768,
+        supports_tools=True,
+    )
+    assert m.hf_repo == "Qwen/Qwen3.5-4B-GGUF"
+    assert m.size_mb == 2400
 
 
-def test_recommend_for_16gb():
-    models = recommend_for(16.0)
-    assert len(models) > 0
-    # Should recommend largest fitting model first
-    assert models[0].size_mb >= models[-1].size_mb
+def test_lookup_cache_miss():
+    result = lookup_cache("nonexistent/model")
+    assert result is None
 
 
-def test_recommend_for_2gb():
-    models = recommend_for(2.0)
-    # No models fit under 2GB RAM
-    assert len(models) == 0
+def test_list_cached():
+    result = list_cached()
+    assert isinstance(result, list)
 
 
-def test_model_size_label():
-    info = lookup("microsoft/Phi-3-mini-4k-instruct")
-    assert "GB" in info.size_label
-
-    info = lookup("TinyLlama/TinyLlama-1.1B-Chat-v1.0")
-    assert "MB" in info.size_label
-
-
-def test_hf_base_repo_present():
-    info = lookup("Qwen/Qwen3-0.6B")
-    assert info.hf_base_repo == "Qwen/Qwen3-0.6B"
-
-    info = lookup("microsoft/Phi-3-mini-4k-instruct")
-    assert info.hf_base_repo == "microsoft/Phi-3-mini-4k-instruct"
+def test_cache_size():
+    size = cache_size_mb()
+    assert isinstance(size, float)
+    assert size >= 0.0

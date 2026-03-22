@@ -1,46 +1,59 @@
 """Tests for the downloader module."""
 
 from pathlib import Path
-from unittest.mock import patch
 
 from zerollm.downloader import (
     _model_dir,
-    _model_path,
-    is_cached,
+    _pick_best_gguf,
     list_downloaded,
     cache_size_mb,
-    CACHE_DIR,
 )
 
 
-def test_model_dir_simple_name():
-    d = _model_dir("Qwen/Qwen3-0.6B")
-    assert "Qwen_Qwen3-0.6B" in str(d)
+def test_model_dir():
+    d = _model_dir("Qwen/Qwen3.5-4B-GGUF")
+    assert "Qwen_Qwen3.5-4B-GGUF" in str(d)
 
 
-def test_model_dir_with_dot():
-    d = _model_dir("Qwen/Qwen3-1.7B")
-    assert "Qwen_Qwen3-1.7B" in str(d)
+def test_model_dir_slash():
+    d = _model_dir("bartowski/Phi-3-mini-4k-instruct-GGUF")
+    assert "bartowski_Phi-3-mini-4k-instruct-GGUF" in str(d)
 
 
-def test_model_path():
-    p = _model_path("Qwen/Qwen3-0.6B", "model.gguf")
-    assert p.name == "model.gguf"
-    assert "Qwen_Qwen3-0.6B" in str(p.parent)
+def test_pick_best_gguf_prefers_q4_k_m():
+    files = [
+        "model-Q2_K.gguf",
+        "model-Q4_K_M.gguf",
+        "model-Q8_0.gguf",
+        "model-f16.gguf",
+    ]
+    assert _pick_best_gguf(files) == "model-Q4_K_M.gguf"
 
 
-def test_is_cached_false():
-    # Model should not be cached in test environment
-    assert is_cached("Qwen/Qwen3-0.6B") is False
+def test_pick_best_gguf_falls_back_to_q5():
+    files = [
+        "model-Q5_K_M.gguf",
+        "model-Q8_0.gguf",
+    ]
+    assert _pick_best_gguf(files) == "model-Q5_K_M.gguf"
 
 
-def test_list_downloaded_empty():
-    # Should return empty list or list of actually downloaded models
+def test_pick_best_gguf_only_q8():
+    files = ["model-Q8_0.gguf"]
+    assert _pick_best_gguf(files) == "model-Q8_0.gguf"
+
+
+def test_pick_best_gguf_unknown_quant():
+    files = ["model-weird.gguf"]
+    assert _pick_best_gguf(files) == "model-weird.gguf"
+
+
+def test_list_downloaded():
     result = list_downloaded()
     assert isinstance(result, list)
 
 
-def test_cache_size_mb():
+def test_cache_size():
     size = cache_size_mb()
     assert isinstance(size, float)
     assert size >= 0.0

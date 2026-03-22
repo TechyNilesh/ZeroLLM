@@ -2,9 +2,23 @@
 
 from __future__ import annotations
 
+import re
 from typing import Generator
 
 from zerollm.hardware import HardwareInfo, compute_n_gpu_layers, compute_threads, detect
+
+# Regex to strip reasoning/thinking tags from model output
+# Matches: <think>...</think>, <reasoning>...</reasoning>, <thought>...</thought>, etc.
+_THINK_PATTERN = re.compile(
+    r"<(think|thinking|reasoning|thought|reflection)>.*?</\1>",
+    re.DOTALL | re.IGNORECASE,
+)
+
+
+def _strip_think_tags(text: str) -> str:
+    """Remove reasoning/thinking tags from model output."""
+    cleaned = _THINK_PATTERN.sub("", text)
+    return cleaned.strip()
 
 
 class LlamaBackend:
@@ -26,12 +40,9 @@ class LlamaBackend:
         self.power = power
         self.context_length = context_length
 
-        # Calculate GPU layers and threads from power setting
         n_threads = compute_threads(power, hw)
 
-        # For GPU layers, we use -1 (all) at power=1.0, scale down with power
         if hw.has_gpu:
-            # Use -1 for full GPU, otherwise estimate ~40 layers for typical small models
             if power >= 1.0:
                 n_gpu_layers = -1
             elif power <= 0.0:
@@ -58,14 +69,7 @@ class LlamaBackend:
     ) -> str | Generator[str, None, None]:
         """Generate a response from messages.
 
-        Args:
-            messages: List of {"role": "user/assistant/system", "content": "..."}.
-            max_tokens: Maximum tokens to generate.
-            temperature: Sampling temperature (0.0 = deterministic, 1.0 = creative).
-            stream: If True, returns a generator yielding tokens.
-
-        Returns:
-            Full response string, or generator of token strings if stream=True.
+        Automatically strips <think>/<reasoning>/<thought> tags from output.
         """
         if stream:
             return self._stream(messages, max_tokens, temperature)
@@ -76,7 +80,8 @@ class LlamaBackend:
             temperature=temperature,
         )
 
-        return response["choices"][0]["message"]["content"]
+        content = response["choices"][0]["message"]["content"] or ""
+        return _strip_think_tags(content)
 
     def _stream(
         self,
@@ -84,7 +89,7 @@ class LlamaBackend:
         max_tokens: int = 1024,
         temperature: float = 0.7,
     ) -> Generator[str, None, None]:
-        """Stream tokens one at a time."""
+        """Stream tokens one at a time, stripping think tags."""
         response = self.model.create_chat_completion(
             messages=messages,
             max_tokens=max_tokens,
@@ -92,11 +97,51 @@ class LlamaBackend:
             stream=True,
         )
 
+        # Buffer to detect and strip think tags during streaming
+        buffer = ""
+        inside_think = False
+
         for chunk in response:
             delta = chunk["choices"][0].get("delta", {})
             content = delta.get("content", "")
-            if content:
-                yield content
+            if not content:
+                continue
+
+            buffer += content
+
+            # Check if we're entering a think block
+            if not inside_think:
+                # Look for opening tag
+                for tag in ["<think>", "<thinking>", "<reasoning>", "<thought>", "<reflection>"]:
+                    if tag in buffer.lower():
+                        # Yield everything before the tag
+                        idx = buffer.lower().index(tag)
+                        before = buffer[:idx]
+                        if before.strip():
+                            yield before
+                        buffer = buffer[idx:]
+                        inside_think = True
+                        break
+
+                if not inside_think:
+                    # No think tag found — yield completed content
+                    # Keep last 20 chars in buffer in case a tag is split across chunks
+                    if len(buffer) > 20:
+                        yield buffer[:-20]
+                        buffer = buffer[-20:]
+
+            # Check if think block is closing
+            if inside_think:
+                for tag in ["</think>", "</thinking>", "</reasoning>", "</thought>", "</reflection>"]:
+                    if tag in buffer.lower():
+                        idx = buffer.lower().index(tag) + len(tag)
+                        buffer = buffer[idx:]
+                        inside_think = False
+                        break
+
+        # Yield remaining buffer (if not inside think block)
+        if not inside_think and buffer.strip():
+            yield buffer.strip()
 
     def generate_with_tools(
         self,
@@ -120,7 +165,6 @@ class LlamaBackend:
 
         choice = response["choices"][0]["message"]
 
-        # Check for tool calls
         tool_calls = choice.get("tool_calls")
         if tool_calls:
             import json
@@ -138,9 +182,10 @@ class LlamaBackend:
                 "arguments": args,
             }
 
+        content = choice.get("content", "") or ""
         return {
             "type": "text",
-            "content": choice.get("content", ""),
+            "content": _strip_think_tags(content),
         }
 
     @property

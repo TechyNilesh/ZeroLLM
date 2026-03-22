@@ -2,7 +2,7 @@
 
 from zerollm import Agent
 
-agent = Agent("Qwen/Qwen3-0.6B")
+agent = Agent("Qwen/Qwen3.5-4B")
 
 
 @agent.tool

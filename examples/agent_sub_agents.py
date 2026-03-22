@@ -28,7 +28,7 @@ def read_url(url: str) -> str:
 
 # Writer agent — good at composing text
 writer = Agent(
-    "Qwen/Qwen3-0.6B",
+    "Qwen/Qwen3.5-4B",
     name="writer",
     system_prompt="You are a skilled writer. Write clear, engaging content.",
 )
@@ -43,7 +43,7 @@ def save_draft(title: str, content: str) -> str:
 # ── Create the main orchestrator agent ──
 
 main = Agent(
-    "Qwen/Qwen3-0.6B",
+    "Qwen/Qwen3.5-4B",
     name="orchestrator",
     system_prompt=(
         "You are a project manager agent. You have two sub-agents: "

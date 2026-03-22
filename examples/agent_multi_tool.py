@@ -3,7 +3,7 @@
 from zerollm import Agent
 
 agent = Agent(
-    "Qwen/Qwen3-0.6B",
+    "Qwen/Qwen3.5-4B",
     system_prompt="You are a helpful assistant with access to weather, math, and note tools.",
 )
 

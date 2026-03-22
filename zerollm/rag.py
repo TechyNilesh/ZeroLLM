@@ -38,7 +38,7 @@ class RAG:
     """Retrieval-Augmented Generation — ask questions about your documents.
 
     Usage:
-        rag = RAG("Qwen/Qwen3-0.6B")
+        rag = RAG("Qwen/Qwen3.5-4B")
         rag.add("company_docs.pdf")
         rag.add("faq.txt")
         answer = rag.ask("What is the return policy?")
@@ -46,7 +46,7 @@ class RAG:
 
     def __init__(
         self,
-        model: str = "Qwen/Qwen3-0.6B",
+        model: str = "Qwen/Qwen3.5-4B",
         power: float = 1.0,
         db_path: str | Path | None = None,
         embedding_model: str = "all-MiniLM-L6-v2",

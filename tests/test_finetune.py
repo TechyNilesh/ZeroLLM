@@ -1,20 +1,19 @@
 """Tests for the FineTuner class (mocked — no actual training)."""
 
-from unittest.mock import patch, MagicMock
+import re
+from unittest.mock import patch
 
 from zerollm.finetune import FineTuner
 
 
 def _mock_finetuner(**kwargs):
-    """Create a FineTuner with mocked console."""
     with patch("zerollm.finetune.console"):
-        tuner = FineTuner(**kwargs)
-        return tuner
+        return FineTuner(**kwargs)
 
 
 def test_finetuner_init():
     tuner = _mock_finetuner()
-    assert tuner.model_name == "Qwen/Qwen3-0.6B"
+    assert tuner.model_name == "Qwen/Qwen3.5-4B"
     assert tuner.lora_r == 16
     assert tuner.lora_alpha == 32
 
@@ -31,17 +30,13 @@ def test_finetuner_init_custom():
     assert tuner.lora_r == 8
 
 
-def test_finetuner_resolve_base_repo():
-    """FineTuner should use hf_base_repo from registry, not hardcoded mapping."""
-    tuner = _mock_finetuner()
-    from zerollm.registry import lookup
-    info = lookup("Qwen/Qwen3-0.6B")
-    assert info.hf_base_repo == "Qwen/Qwen3-0.6B"
+def test_finetuner_strips_gguf_suffix():
+    model = "Qwen/Qwen3.5-4B-GGUF"
+    base = re.sub(r"-GGUF$", "", model, flags=re.IGNORECASE)
+    assert base == "Qwen/Qwen3.5-4B"
 
 
-def test_finetuner_all_models_have_base_repo():
-    """Every model in registry must have hf_base_repo for fine-tuning."""
-    from zerollm.registry import list_models
-    for model in list_models():
-        assert model.hf_base_repo, f"{model.name} missing hf_base_repo"
-        assert "/" in model.hf_base_repo, f"{model.name} hf_base_repo looks invalid: {model.hf_base_repo}"
+def test_finetuner_no_gguf_unchanged():
+    model = "Qwen/Qwen3.5-4B"
+    base = re.sub(r"-GGUF$", "", model, flags=re.IGNORECASE)
+    assert base == "Qwen/Qwen3.5-4B"

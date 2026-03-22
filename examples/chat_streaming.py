@@ -2,7 +2,7 @@
 
 from zerollm import Chat
 
-bot = Chat("Qwen/Qwen3-0.6B")
+bot = Chat("Qwen/Qwen3.5-4B")
 
 # Stream tokens as they are generated
 print("Streaming response:")

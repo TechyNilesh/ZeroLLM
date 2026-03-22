@@ -60,7 +60,7 @@ def _mock_agent(**kwargs):
     from zerollm.resolver import ResolvedModel
 
     mock_resolved = ResolvedModel(
-        name=kwargs.get("model", "Qwen/Qwen3-0.6B"),
+        name=kwargs.get("model", "Qwen/Qwen3.5-4B"),
         path="/fake/model.gguf",
         context_length=8192,
         source="registry",
@@ -81,7 +81,7 @@ def _mock_agent(**kwargs):
 
 def test_agent_init():
     agent = _mock_agent()
-    assert agent.model_name == "Qwen/Qwen3-0.6B"
+    assert agent.model_name == "Qwen/Qwen3.5-4B"
     assert len(agent._tools) == 0
 
 
@@ -126,6 +126,13 @@ def test_agent_ask_with_tool_call():
 def test_agent_ask_unknown_tool():
     agent = _mock_agent()
 
+    # Register a tool so the agent uses generate_with_tools path
+    @agent.tool
+    def real_tool(x: str) -> str:
+        """A real tool."""
+        return x
+
+    # But the LLM calls a tool that doesn't exist
     agent._mock_backend.generate_with_tools.return_value = {
         "type": "tool_call",
         "name": "nonexistent_tool",
@@ -253,3 +260,126 @@ def test_agent_mixed_tools_and_sub_agents():
 def test_agent_name_parameter():
     agent = _mock_agent(name="my-custom-agent")
     assert agent.name == "my-custom-agent"
+
+
+# ── SharedContext tests ──
+
+def test_shared_context_set_get():
+    from zerollm.agent import SharedContext
+    ctx = SharedContext()
+    ctx.set("key1", "value1")
+    assert ctx.get("key1") == "value1"
+    assert ctx.get("missing") is None
+    assert ctx.get("missing", "default") == "default"
+
+
+def test_shared_context_append():
+    from zerollm.agent import SharedContext
+    ctx = SharedContext()
+    ctx.append("results", "item1")
+    ctx.append("results", "item2")
+    assert ctx.get("results") == ["item1", "item2"]
+
+
+def test_shared_context_keys():
+    from zerollm.agent import SharedContext
+    ctx = SharedContext()
+    ctx.set("a", 1)
+    ctx.set("b", 2)
+    assert sorted(ctx.keys()) == ["a", "b"]
+
+
+def test_shared_context_summary():
+    from zerollm.agent import SharedContext
+    ctx = SharedContext()
+    ctx.set("research", "Found 3 articles")
+    ctx.set("status", "done")
+    summary = ctx.summary()
+    assert "research" in summary
+    assert "Found 3 articles" in summary
+    assert "status" in summary
+
+
+def test_shared_context_clear():
+    from zerollm.agent import SharedContext
+    ctx = SharedContext()
+    ctx.set("key", "value")
+    ctx.clear()
+    assert ctx.get("key") is None
+    assert ctx.keys() == []
+
+
+def test_shared_context_empty_summary():
+    from zerollm.agent import SharedContext
+    ctx = SharedContext()
+    assert ctx.summary() == ""
+
+
+def test_agents_share_context():
+    from zerollm.agent import SharedContext
+    ctx = SharedContext()
+    main = _mock_agent(name="main", context=ctx)
+    sub = _mock_agent(name="sub", context=ctx)
+
+    # Both agents see the same context
+    assert main.context is sub.context
+    main.context.set("shared_data", "hello")
+    assert sub.context.get("shared_data") == "hello"
+
+
+def test_add_agent_shares_context():
+    main = _mock_agent(name="main")
+    sub = _mock_agent(name="sub")
+
+    # Initially different contexts
+    assert main.context is not sub.context
+
+    main.add_agent("sub", sub, "A sub-agent")
+
+    # After add_agent, they share the same context
+    assert sub.context is main.context
+
+
+def test_sub_agent_stores_result_in_context():
+    main = _mock_agent(name="main")
+    sub = _mock_agent(name="researcher")
+    sub._mock_backend.generate.return_value = "Found important data"
+
+    main.add_agent("researcher", sub, "Research topics")
+
+    # Call the sub-agent
+    main._tools["researcher"](task="find data")
+
+    # Result should be in shared context
+    assert main.context.get("researcher_result") == "Found important data"
+
+
+# ── Pipeline tests ──
+
+def test_pipeline_creation():
+    from zerollm.agent import Pipeline
+    a1 = _mock_agent(name="step1")
+    a2 = _mock_agent(name="step2")
+
+    pipe = Pipeline([("research", a1), ("write", a2)])
+    assert len(pipe.steps) == 2
+    # All agents share the same context
+    assert a1.context is a2.context
+    assert a1.context is pipe.context
+
+
+def test_pipeline_run():
+    from zerollm.agent import Pipeline
+    a1 = _mock_agent(name="researcher")
+    a2 = _mock_agent(name="writer")
+
+    a1._mock_backend.generate.return_value = "Research results about AI"
+    a2._mock_backend.generate.return_value = "Blog post based on research"
+
+    pipe = Pipeline([("research", a1), ("write", a2)])
+    result = pipe.run("Write a blog about AI")
+
+    assert result == "Blog post based on research"
+    assert pipe.context.get("initial_prompt") == "Write a blog about AI"
+    assert pipe.context.get("research_result") == "Research results about AI"
+    assert pipe.context.get("write_result") == "Blog post based on research"

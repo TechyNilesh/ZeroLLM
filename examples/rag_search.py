@@ -2,7 +2,7 @@
 
 from zerollm import RAG
 
-rag = RAG("Qwen/Qwen3-0.6B")
+rag = RAG("Qwen/Qwen3.5-4B")
 
 # Add documents
 rag.add("company_docs.pdf")

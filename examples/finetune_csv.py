@@ -2,7 +2,7 @@
 
 from zerollm import FineTuner
 
-tuner = FineTuner("Qwen/Qwen3-0.6B")
+tuner = FineTuner("Qwen/Qwen3.5-4B")
 
 # Train from a list
 tuner.train([
