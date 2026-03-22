@@ -6,7 +6,7 @@ Usage:
     print(bot.ask("Hello!"))
 """
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 from zerollm.chat import Chat
 from zerollm.agent import Agent
