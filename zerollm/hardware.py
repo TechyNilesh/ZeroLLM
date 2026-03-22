@@ -98,7 +98,7 @@ def _detect_cuda() -> tuple[bool, str | None, float | None]:
 
         if torch.cuda.is_available():
             name = torch.cuda.get_device_name(0)
-            vram = torch.cuda.get_device_properties(0).total_mem / (1024**3)
+            vram = torch.cuda.get_device_properties(0).total_memory / (1024**3)
             return True, name, round(vram, 1)
     except ImportError:
         pass
