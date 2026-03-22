@@ -168,6 +168,6 @@ Run `zerollm list` to see curated models, or `zerollm recommend` to find the bes
 
 [MIT](LICENSE)
 
-## Author
+## Core Contributor
 
-Built by [Nilesh Verma](https://nileshverma.com/)
+[Nilesh Verma](https://nileshverma.com/)
