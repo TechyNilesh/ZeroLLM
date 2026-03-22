@@ -49,8 +49,8 @@ class Server:
     def _create_app(self):
         """Create FastAPI application with OpenAI-compatible routes."""
         from fastapi import FastAPI
-        from fastapi.responses import JSONResponse, StreamingResponse
-        from pydantic import BaseModel, Field
+        from fastapi.responses import StreamingResponse
+        from pydantic import BaseModel
 
         app = FastAPI(title="ZeroLLM API", version="0.1.0")
 
@@ -61,14 +61,14 @@ class Server:
             content: str
 
         class ChatRequest(BaseModel):
-            model: str = self.model_name
+            model: str = ""
             messages: list[Message]
             max_tokens: int = 1024
             temperature: float = 0.7
             stream: bool = False
 
         class CompletionRequest(BaseModel):
-            model: str = self.model_name
+            model: str = ""
             prompt: str
             max_tokens: int = 1024
             temperature: float = 0.7

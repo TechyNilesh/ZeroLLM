@@ -1,6 +1,6 @@
 [project]
 name = "zerollm-kit"
-version = "0.1.4"
+version = "0.1.5"
 description = "Zero setup, zero config — the easiest Python API for local LLMs on any hardware"
 readme = "README.md"
 license = "MIT"
