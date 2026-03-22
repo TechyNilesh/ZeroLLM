@@ -50,8 +50,25 @@ print(bot.ask("Explain quantum computing in one sentence"))
 for token in bot.stream("Write a haiku about code"):
     print(token, end="", flush=True)
 
-# Interactive REPL
-bot.chat()
+# System prompt — give the bot a personality
+bot = Chat("Qwen/Qwen3.5-4B", system_prompt="You are a pirate. Speak like one.")
+print(bot.ask("What is the capital of France?"))
+```
+
+### Multi-Turn Chat with Memory
+
+```python
+from zerollm import Chat
+
+bot = Chat("Qwen/Qwen3.5-4B", memory=True)
+
+bot.ask("My name is Nilesh")
+bot.ask("I work on AI projects")
+print(bot.ask("What is my name and what do I do?"))
+# Remembers: Nilesh, works on AI projects
+
+# Memory auto-summarizes old turns when history gets long
+# Persistent memory survives restarts (stored in SQLite)
 ```
 
 ### Agent with Tools
@@ -59,7 +76,11 @@ bot.chat()
 ```python
 from zerollm import Agent
 
-agent = Agent("Qwen/Qwen3.5-4B")
+# Pass instruction prompt to the agent
+agent = Agent(
+    "Qwen/Qwen3.5-4B",
+    system_prompt="You are a helpful assistant. Always be concise.",
+)
 
 @agent.tool
 def get_weather(city: str) -> str:
@@ -69,19 +90,88 @@ def get_weather(city: str) -> str:
 print(agent.ask("What's the weather in Auckland?"))
 ```
 
-### Sub-Agents
+### Agent with ReAct Reasoning
 
 ```python
-researcher = Agent("Qwen/Qwen3-1.7B", name="researcher")
+# ReAct: Thought → Action → Observation → Answer
+agent = Agent("Qwen/Qwen3.5-4B", react=True)
+
+@agent.tool
+def calculate(expression: str) -> str:
+    return str(eval(expression))
+
+agent.ask("What is 15% of 230?")  # thinks step-by-step before answering
+```
+
+### Agent Guardrails
+
+```python
+agent = Agent("Qwen/Qwen3.5-4B")
+
+@agent.before_ask
+def block_injection(prompt: str) -> str | None:
+    if "ignore previous" in prompt.lower():
+        return "Blocked: potential prompt injection."
+    return None
+
+@agent.after_ask
+def clean_output(response: str) -> str:
+    return response.replace("sensitive_data", "***")
+```
+
+### Human-in-the-Loop
+
+```python
+# Safe tools run automatically
+@agent.tool
+def search(query: str) -> str:
+    return f"Results for: {query}"
+
+# Dangerous tools ask for confirmation first
+@agent.tool(confirm=True)
+def delete_file(path: str) -> str:
+    """Prompts: 'Confirm: Call delete_file({"path": "..."})? [y/N]'"""
+    os.remove(path)
+    return f"Deleted {path}"
+```
+
+### Sub-Agents with Shared Context
+
+```python
+from zerollm import Agent, SharedContext
+
+ctx = SharedContext()
+
+# Each sub-agent gets its own instruction prompt
+researcher = Agent(
+    "Qwen/Qwen3.5-4B",
+    name="researcher",
+    context=ctx,
+    system_prompt="You are a research assistant. Find accurate information.",
+)
+
+writer = Agent(
+    "Qwen/Qwen3.5-4B",
+    name="writer",
+    context=ctx,
+    system_prompt="You are a skilled writer. Write clear, engaging content.",
+)
 
 @researcher.tool
 def search(query: str) -> str:
     return f"Results for: {query}"
 
-main = Agent("Qwen/Qwen3.5-4B")
+main = Agent(
+    "Qwen/Qwen3.5-4B",
+    context=ctx,
+    system_prompt="You are a project manager. Delegate research and writing tasks.",
+)
 main.add_agent("researcher", researcher, "Research any topic")
+main.add_agent("writer", writer, "Write content")
 
-main.ask("Research the latest AI trends")
+# Multi-turn — agent remembers previous conversation
+main.ask("Research AI trends and write a summary")
+main.ask("Now make it shorter")  # remembers the previous output
 ```
 
 ### Serve as API
@@ -104,7 +194,7 @@ tuner.train("my_data.csv", epochs=3)
 tuner.save("my-bot")
 ```
 
-Then serve your fine-tuned model:
+Then use your fine-tuned model:
 
 ```python
 from zerollm import Chat, Server
@@ -123,38 +213,58 @@ rag.add("docs.pdf")
 print(rag.ask("What is the refund policy?"))
 ```
 
-Powered by SQLite + sqlite-vec. No external database needed.
+With cross-encoder reranking for better results:
+
+```python
+rag = RAG("Qwen/Qwen3.5-4B", rerank=True)
+```
+
+Conversation-aware — follow-up questions just work:
+
+```python
+rag.chat("What is the refund policy?")
+rag.chat("How long do I have?")  # auto-rewrites using chat history
+```
+
+Connect RAG to an Agent:
+
+```python
+agent = Agent("Qwen/Qwen3.5-4B")
+agent.add_rag(rag, "Search company documents")
+agent.ask("What does our policy say about returns?")
+```
+
+Powered by SQLite + sqlite-vec hybrid search. No external database needed.
 
 ## CLI
 
 ```bash
-zerollm recommend                                          # best model for your hardware
-zerollm chat Qwen/Qwen3.5-4B          # interactive chat
-zerollm serve Qwen/Qwen3.5-4B         # start API server
-zerollm list                                               # all available models
-zerollm doctor                                             # diagnose setup
+zerollm chat Qwen/Qwen3.5-4B    # interactive chat
+zerollm serve Qwen/Qwen3.5-4B   # start API server
+zerollm list                     # show downloaded models
+zerollm doctor                   # diagnose setup
+zerollm download Qwen/Qwen3.5-4B  # pre-download a model
 ```
 
 ## Supported Hardware
 
 | Platform | Acceleration | Auto-detected |
 |----------|-------------|---------------|
-| Any CPU | llama.cpp | Yes |
+| Any CPU | PyTorch | Yes |
 | NVIDIA GPU | CUDA | Yes |
-| Apple Silicon | Metal | Yes |
+| Apple Silicon | MPS | Yes |
 | AMD GPU | ROCm | Yes |
-| Raspberry Pi | CPU | Yes |
 
 ## Models
 
-Works with **any GGUF model from HuggingFace**. No curated list. Just pass the HF repo name:
+Works with **any model from HuggingFace**. Just pass the HF repo name:
 
 ```python
-Chat("Qwen/Qwen3.5-4B")                        # auto-finds GGUF, picks best quantization
-Chat("bartowski/Phi-3-mini-4k-instruct-GGUF")   # direct GGUF repo
-Chat("TheBloke/Mistral-7B-Instruct-v0.2-GGUF")  # any GGUF repo works
-Chat("/path/to/any-model.gguf")                  # local file
-Chat("my-finetuned-bot")                         # fine-tuned model
+Chat("Qwen/Qwen3.5-4B")                            # any HF model
+Chat("microsoft/Phi-3-mini-4k-instruct")            # another model
+Chat("deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B")  # reasoning model
+Chat("/path/to/local-model/")                        # local model directory
+Chat("my-finetuned-bot")                             # fine-tuned model
 ```
 
 Run `zerollm list` to see downloaded models, or `zerollm doctor` to check your setup.
@@ -165,7 +275,20 @@ Run `zerollm list` to see downloaded models, or `zerollm doctor` to check your s
   <img src="https://raw.githubusercontent.com/TechyNilesh/ZeroLLM/main/assets/zerollm-architecture.png" alt="ZeroLLM Architecture" width="700">
 </p>
 
-> **Note:** ZeroLLM is in early alpha. Things will break, APIs may change, and some models might not load depending on your `llama-cpp-python` version. That's expected — we're iterating fast. If you hit an issue or have ideas, [open an issue](https://github.com/TechyNilesh/ZeroLLM/issues). Your feedback shapes what this becomes.
+## Note
+
+> ZeroLLM is in **early alpha**. Things will break, APIs may change, and not every HuggingFace model will work perfectly. That's expected — we're iterating fast.
+>
+> **HuggingFace login:** ZeroLLM downloads models from HuggingFace Hub. Public models work without login, but you may see rate limit warnings. For faster downloads, log in once:
+>
+> ```bash
+> pip install huggingface_hub
+> huggingface-cli login
+> ```
+>
+> Or set a token: `export HF_TOKEN="hf_..."` ([get one here](https://huggingface.co/settings/tokens))
+>
+> **Feedback welcome.** If you hit an issue or have ideas, [open an issue](https://github.com/TechyNilesh/ZeroLLM/issues). Your feedback shapes what this becomes.
 
 ## Star History
 

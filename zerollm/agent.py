@@ -8,7 +8,7 @@ from typing import Any, Callable, get_type_hints
 
 from rich.console import Console
 
-from zerollm.backend import LlamaBackend
+from zerollm.backend import HFBackend
 from zerollm.hardware import detect
 from zerollm.memory import Memory
 from zerollm.resolver import resolve
@@ -157,12 +157,16 @@ class Agent:
         max_tokens: int = 1024,
         temperature: float = 0.3,
         max_tool_rounds: int = 5,
+        max_retries: int = 2,
+        react: bool = False,
         name: str | None = None,
         context: SharedContext | None = None,
     ):
         self.max_tokens = max_tokens
         self.temperature = temperature
         self.max_tool_rounds = max_tool_rounds
+        self.max_retries = max_retries
+        self.react = react
 
         # Tool registry
         self._tools: dict[str, Callable] = {}
@@ -170,6 +174,10 @@ class Agent:
 
         # Sub-agent registry
         self._sub_agents: dict[str, Agent] = {}
+
+        # Guardrail hooks
+        self._before_hooks: list[Callable] = []
+        self._after_hooks: list[Callable] = []
 
         # Shared context (for multi-agent communication)
         self.context = context or SharedContext()
@@ -187,8 +195,8 @@ class Agent:
                 f"Consider using a model with supports_tools=True."
             )
 
-        self.backend = LlamaBackend(
-            model_path=resolved.path,
+        self.backend = HFBackend(
+            model_name=resolved.model_id,
             context_length=resolved.context_length,
             power=power,
             hw=hw,
@@ -196,21 +204,106 @@ class Agent:
 
         self.memory = Memory()
 
-        default_system = (
-            "You are a helpful assistant with access to tools. "
-            "When a user asks something that can be answered using a tool, "
-            "call the appropriate tool. Otherwise, respond directly."
-        )
+        if react:
+            default_system = (
+                "You are a helpful assistant with access to tools. "
+                "For each step, use this format:\n\n"
+                "Thought: <your reasoning about what to do next>\n"
+                "Action: <tool call JSON or 'none'>\n\n"
+                "After receiving a tool result (Observation), reason again.\n"
+                "When you have the final answer, respond with:\n"
+                "Thought: I now have the answer.\n"
+                "Answer: <your final answer>\n\n"
+                "To call a tool, use this JSON format in Action:\n"
+                '{"tool_call": {"name": "function_name", "arguments": {"arg": "value"}}}'
+            )
+        else:
+            default_system = (
+                "You are a helpful assistant with access to tools. "
+                "When a user asks something that can be answered using a tool, "
+                "call the appropriate tool. Otherwise, respond directly."
+            )
         self._system_prompt = system_prompt or default_system
         self.memory.add_system(self._system_prompt)
 
         console.print(f"[green]✓[/green] Agent ready ({self.name})")
 
-    def tool(self, func: Callable) -> Callable:
-        """Register a function as a tool the agent can call."""
-        schema = _build_tool_schema(func)
-        self._tools[func.__name__] = func
-        self._tool_schemas.append(schema)
+    def tool(self, func: Callable = None, *, confirm: bool = False) -> Callable:
+        """Register a function as a tool the agent can call.
+
+        Args:
+            func: The function to register.
+            confirm: If True, ask for human confirmation before executing.
+
+        Usage:
+            @agent.tool
+            def search(query: str) -> str: ...
+
+            @agent.tool(confirm=True)
+            def delete_file(path: str) -> str: ...  # asks before running
+        """
+        def decorator(f: Callable) -> Callable:
+            if confirm:
+                original = f
+
+                def confirmed_tool(**kwargs):
+                    console.print(
+                        f"[bold yellow]Confirm:[/bold yellow] "
+                        f"Call {f.__name__}({json.dumps(kwargs)})? [y/N] ",
+                        end="",
+                    )
+                    try:
+                        answer = input().strip().lower()
+                    except (KeyboardInterrupt, EOFError):
+                        return "Tool call cancelled by user."
+                    if answer in ("y", "yes"):
+                        return original(**kwargs)
+                    return "Tool call cancelled by user."
+
+                confirmed_tool.__name__ = f.__name__
+                confirmed_tool.__doc__ = f.__doc__
+                confirmed_tool.__annotations__ = f.__annotations__
+                f = confirmed_tool
+
+            schema = _build_tool_schema(f)
+            self._tools[f.__name__] = f
+            self._tool_schemas.append(schema)
+            return f
+
+        if func is not None:
+            # Called as @agent.tool without parentheses
+            return decorator(func)
+        # Called as @agent.tool(confirm=True)
+        return decorator
+
+    def before_ask(self, func: Callable) -> Callable:
+        """Register a guardrail that runs before each ask().
+
+        The function receives the prompt and returns:
+        - None to allow the request
+        - A string to block the request (returned as the response)
+
+        Usage:
+            @agent.before_ask
+            def check(prompt: str) -> str | None:
+                if "ignore previous" in prompt.lower():
+                    return "Blocked: potential prompt injection."
+                return None
+        """
+        self._before_hooks.append(func)
+        return func
+
+    def after_ask(self, func: Callable) -> Callable:
+        """Register a guardrail that runs after each ask().
+
+        The function receives the response and can modify or block it.
+
+        Usage:
+            @agent.after_ask
+            def clean(response: str) -> str:
+                return response.replace("bad_word", "***")
+        """
+        self._after_hooks.append(func)
         return func
 
     def add_agent(
@@ -277,27 +370,80 @@ class Agent:
         self._tools[name] = _delegate
         self._tool_schemas.append(schema)
 
+    def add_rag(self, rag, description: str = "") -> None:
+        """Connect a RAG instance as a tool the agent can use for document search.
+
+        Creates a tool named "search_documents" that the agent can call to
+        retrieve relevant chunks from the RAG database.
+
+        Args:
+            rag: A RAG instance with documents already added.
+            description: Description of what the documents contain (shown to the LLM).
+        """
+        from zerollm.rag import RAG
+
+        def search_documents(query: str) -> str:
+            """Search the document database and return relevant passages."""
+            results = rag.search(query)
+            if not results:
+                return "No relevant documents found."
+            parts = []
+            for i, r in enumerate(results, 1):
+                parts.append(
+                    f"[{i}] (score: {r['score']:.3f}) "
+                    f"Source: {r['doc_path']}, Chunk {r['chunk_index']}\n"
+                    f"{r['content']}"
+                )
+            return "\n\n---\n\n".join(parts)
+
+        tool_desc = description or "Search the document database for relevant information."
+        search_documents.__doc__ = tool_desc
+        search_documents.__annotations__ = {"query": str, "return": str}
+
+        schema = _build_tool_schema(search_documents)
+        self._tools["search_documents"] = search_documents
+        self._tool_schemas.append(schema)
+
+        console.print(f"[green]✓[/green] RAG connected as 'search_documents' tool")
+
     def ask(self, prompt: str) -> str:
         """Send a prompt and let the agent use tools to answer.
 
-        The agent will:
-        1. Inject shared context into the system prompt
-        2. Send prompt + tool schemas to the LLM
-        3. If LLM returns a tool call → execute the function
-        4. Feed the result back to the LLM
-        5. Repeat until the LLM gives a final text answer
+        Includes guardrails (before/after hooks), retry logic for malformed
+        tool calls, and optional ReAct reasoning.
         """
-        # Inject shared context into system prompt if available
+        # Run before-ask guardrails
+        for hook in self._before_hooks:
+            block = hook(prompt)
+            if block is not None:
+                return str(block)
+
+        # Inject shared context
         ctx_summary = self.context.summary()
         if ctx_summary:
-            enriched_system = (
-                f"{self._system_prompt}\n\n"
-                f"Shared context from other agents:\n{ctx_summary}"
+            self.memory.add_system(
+                f"{self._system_prompt}\n\nShared context:\n{ctx_summary}"
             )
-            self.memory.add_system(enriched_system)
 
         self.memory.add("user", prompt)
 
+        # Run the agent loop
+        if self.react and self._tool_schemas:
+            response = self._react_loop()
+        else:
+            response = self._tool_loop()
+
+        # Auto-summarize if memory is getting long
+        self.memory.maybe_summarize(backend=self.backend)
+
+        # Run after-ask guardrails
+        for hook in self._after_hooks:
+            response = hook(response)
+
+        return response
+
+    def _tool_loop(self) -> str:
+        """Standard tool-calling loop with retry on malformed JSON."""
         for _ in range(self.max_tool_rounds):
             messages = self.memory.get_context()
 
@@ -310,12 +456,33 @@ class Agent:
                 self.memory.add("assistant", response)
                 return response
 
-            result = self.backend.generate_with_tools(
-                messages=messages,
-                tools=self._tool_schemas,
-                max_tokens=self.max_tokens,
-                temperature=self.temperature,
-            )
+            # Try to get a valid tool call, with retries
+            result = None
+            for retry in range(self.max_retries + 1):
+                result = self.backend.generate_with_tools(
+                    messages=messages,
+                    tools=self._tool_schemas,
+                    max_tokens=self.max_tokens,
+                    temperature=self.temperature,
+                )
+
+                if result["type"] == "tool_call":
+                    break
+
+                # Check if the text response looks like a failed tool call
+                content = result.get("content", "")
+                if retry < self.max_retries and "{" in content and "tool" in content.lower():
+                    console.print(f"[dim]  Retrying tool call (attempt {retry + 2})...[/dim]")
+                    messages.append({"role": "assistant", "content": content})
+                    messages.append({
+                        "role": "user",
+                        "content": (
+                            "Your response was not valid JSON. Please respond with EXACTLY:\n"
+                            '{"tool_call": {"name": "function_name", "arguments": {"arg": "value"}}}'
+                        ),
+                    })
+                else:
+                    break
 
             if result["type"] == "text":
                 self.memory.add("assistant", result["content"])
@@ -330,22 +497,88 @@ class Agent:
                 self.memory.add("assistant", error_msg)
                 return error_msg
 
-            console.print(
-                f"[dim]  → Calling {tool_name}({json.dumps(tool_args)})[/dim]"
-            )
+            console.print(f"[dim]  → Calling {tool_name}({json.dumps(tool_args)})[/dim]")
 
             try:
                 tool_result = self._tools[tool_name](**tool_args)
             except Exception as e:
                 tool_result = f"Error calling {tool_name}: {e}"
 
-            self.memory.add(
-                "assistant",
-                f"I'll call the {tool_name} tool with {json.dumps(tool_args)}",
-            )
+            self.memory.add("assistant", f"Calling {tool_name}({json.dumps(tool_args)})")
             self.memory.add("tool", str(tool_result))
 
-        fallback = "I've reached the maximum number of tool calls. Here's what I found so far."
+        fallback = "I've reached the maximum number of tool calls."
+        self.memory.add("assistant", fallback)
+        return fallback
+
+    def _react_loop(self) -> str:
+        """ReAct reasoning loop: Thought → Action → Observation → ... → Answer."""
+        import re as _re
+
+        for _ in range(self.max_tool_rounds):
+            messages = self.memory.get_context()
+
+            response = self.backend.generate(
+                messages=messages,
+                max_tokens=self.max_tokens,
+                temperature=self.temperature,
+            )
+
+            # Parse ReAct format
+            thought_match = _re.search(r"Thought:\s*(.+?)(?=Action:|Answer:|$)", response, _re.DOTALL)
+            action_match = _re.search(r"Action:\s*(.+?)(?=Thought:|Answer:|$)", response, _re.DOTALL)
+            answer_match = _re.search(r"Answer:\s*(.+?)$", response, _re.DOTALL)
+
+            if thought_match:
+                thought = thought_match.group(1).strip()
+                console.print(f"[dim]  Thought: {thought[:100]}...[/dim]")
+
+            # Final answer found
+            if answer_match:
+                answer = answer_match.group(1).strip()
+                self.memory.add("assistant", answer)
+                return answer
+
+            # Try to extract and execute tool call from Action
+            if action_match:
+                action_text = action_match.group(1).strip()
+
+                # Try to parse JSON tool call
+                tool_call = None
+                try:
+                    parsed = json.loads(action_text)
+                    if "tool_call" in parsed:
+                        tool_call = parsed["tool_call"]
+                except (json.JSONDecodeError, KeyError):
+                    # Try to find JSON in the action text
+                    json_match = _re.search(r'\{.*\}', action_text, _re.DOTALL)
+                    if json_match:
+                        try:
+                            parsed = json.loads(json_match.group())
+                            if "tool_call" in parsed:
+                                tool_call = parsed["tool_call"]
+                        except json.JSONDecodeError:
+                            pass
+
+                if tool_call and tool_call["name"] in self._tools:
+                    name = tool_call["name"]
+                    args = tool_call.get("arguments", {})
+                    console.print(f"[dim]  → Action: {name}({json.dumps(args)})[/dim]")
+
+                    try:
+                        result = self._tools[name](**args)
+                    except Exception as e:
+                        result = f"Error: {e}"
+
+                    self.memory.add("assistant", response)
+                    self.memory.add("user", f"Observation: {result}")
+                    continue
+
+            # No action or answer — treat whole response as answer
+            self.memory.add("assistant", response)
+            return response
+
+        fallback = "I've reached the maximum reasoning steps."
         self.memory.add("assistant", fallback)
         return fallback
 
