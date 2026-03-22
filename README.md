@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/zerollm-logo.png" alt="ZeroLLM" width="400">
+  <img src="assets/zerollm-logo-main.png" alt="ZeroLLM" width="400">
 </p>
 
 <p align="center">
