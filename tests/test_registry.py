@@ -14,7 +14,7 @@ def test_lookup_valid_model():
 
 def test_lookup_all_models():
     models = list_models()
-    assert len(models) == 6
+    assert len(models) == 5
     names = [m.name for m in models]
     assert "Qwen/Qwen3-0.6B" in names
     assert "TinyLlama/TinyLlama-1.1B-Chat-v1.0" in names

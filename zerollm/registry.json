@@ -2,8 +2,8 @@
   "Qwen/Qwen3-0.6B": {
     "hf_repo": "Qwen/Qwen3-0.6B-GGUF",
     "hf_base_repo": "Qwen/Qwen3-0.6B",
-    "filename": "qwen3-0.6b-q4_k_m.gguf",
-    "size_mb": 400,
+    "filename": "Qwen3-0.6B-Q8_0.gguf",
+    "size_mb": 640,
     "min_ram_gb": 3,
     "context_length": 32768,
     "chat_template": "chatml",
@@ -13,8 +13,8 @@
   "Qwen/Qwen3-1.7B": {
     "hf_repo": "Qwen/Qwen3-1.7B-GGUF",
     "hf_base_repo": "Qwen/Qwen3-1.7B",
-    "filename": "qwen3-1.7b-q4_k_m.gguf",
-    "size_mb": 1100,
+    "filename": "Qwen3-1.7B-Q8_0.gguf",
+    "size_mb": 1900,
     "min_ram_gb": 4,
     "context_length": 32768,
     "chat_template": "chatml",
@@ -31,17 +31,6 @@
     "chat_template": "zephyr",
     "supports_tools": false,
     "license": "Apache-2.0"
-  },
-  "google/gemma-3-1b-it": {
-    "hf_repo": "bartowski/gemma-3-1b-it-GGUF",
-    "hf_base_repo": "google/gemma-3-1b-it",
-    "filename": "gemma-3-1b-it-Q4_K_M.gguf",
-    "size_mb": 500,
-    "min_ram_gb": 4,
-    "context_length": 8192,
-    "chat_template": "gemma",
-    "supports_tools": true,
-    "license": "Gemma"
   },
   "microsoft/Phi-3-mini-4k-instruct": {
     "hf_repo": "bartowski/Phi-3-mini-4k-instruct-GGUF",
