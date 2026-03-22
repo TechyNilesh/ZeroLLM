@@ -1,13 +1,38 @@
 """OpenAI-compatible REST API server."""
 
-from __future__ import annotations
-
 import time
 import uuid
+
+from fastapi import FastAPI
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 
 from zerollm.backend import LlamaBackend
 from zerollm.hardware import detect
 from zerollm.resolver import resolve
+
+
+# ── Request models (module-level for FastAPI compatibility) ──
+
+
+class _Message(BaseModel):
+    role: str
+    content: str
+
+
+class _ChatRequest(BaseModel):
+    model: str = ""
+    messages: list[_Message]
+    max_tokens: int = 1024
+    temperature: float = 0.7
+    stream: bool = False
+
+
+class _CompletionRequest(BaseModel):
+    model: str = ""
+    prompt: str
+    max_tokens: int = 1024
+    temperature: float = 0.7
 
 
 class Server:
@@ -48,32 +73,7 @@ class Server:
 
     def _create_app(self):
         """Create FastAPI application with OpenAI-compatible routes."""
-        from fastapi import FastAPI
-        from fastapi.responses import StreamingResponse
-        from pydantic import BaseModel
-
         app = FastAPI(title="ZeroLLM API", version="0.1.0")
-
-        # ── Request/Response models ──
-
-        class Message(BaseModel):
-            role: str
-            content: str
-
-        class ChatRequest(BaseModel):
-            model: str = ""
-            messages: list[Message]
-            max_tokens: int = 1024
-            temperature: float = 0.7
-            stream: bool = False
-
-        class CompletionRequest(BaseModel):
-            model: str = ""
-            prompt: str
-            max_tokens: int = 1024
-            temperature: float = 0.7
-
-        # ── Routes ──
 
         @app.get("/health")
         async def health():
@@ -93,7 +93,7 @@ class Server:
             }
 
         @app.post("/v1/chat/completions")
-        async def chat_completions(req: ChatRequest):
+        async def chat_completions(req: _ChatRequest):
             messages = [{"role": m.role, "content": m.content} for m in req.messages]
 
             if req.stream:
@@ -128,7 +128,7 @@ class Server:
             }
 
         @app.post("/v1/completions")
-        async def completions(req: CompletionRequest):
+        async def completions(req: _CompletionRequest):
             messages = [{"role": "user", "content": req.prompt}]
 
             response_text = self.backend.generate(
@@ -180,7 +180,6 @@ class Server:
             }
             yield f"data: {json.dumps(chunk)}\n\n"
 
-        # Final chunk
         final = {
             "id": chat_id,
             "object": "chat.completion.chunk",
