@@ -1,0 +1,71 @@
+[project]
+name = "zerollm"
+version = "0.1.0"
+description = "Zero setup, zero config — the easiest Python API for local LLMs on any hardware"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "Nilesh Verma" },
+]
+keywords = ["llm", "local", "inference", "fine-tuning", "agents", "rag"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+dependencies = [
+    # Inference (single backend — covers CPU, CUDA, Metal, ROCm)
+    "llama-cpp-python",
+    "torch",
+    # Model downloads
+    "huggingface_hub",
+    "tokenizers",
+    # Hardware detection
+    "psutil",
+    # API server
+    "fastapi",
+    "uvicorn",
+    # Fine-tuning
+    "peft",
+    "transformers",
+    "datasets",
+    "accelerate",
+    # Data loading
+    "pymupdf",
+    "python-docx",
+    # RAG (SQLite-based, inspired by OpenClaw)
+    "sqlite-vec",
+    "sentence-transformers",
+    # CLI & UI
+    "rich",
+    "typer",
+]
+
+[project.scripts]
+zerollm = "zerollm.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/nileshverma/zerollm"
+Repository = "https://github.com/nileshverma/zerollm"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
