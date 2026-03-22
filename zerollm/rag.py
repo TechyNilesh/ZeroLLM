@@ -91,22 +91,17 @@ class RAG:
         # Initialize database
         self._db_path = Path(db_path) if db_path else RAG_DB
         self._db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._chroma_client = None
+        self._chroma_collection = None
+        self._vector_backend = None
         self._db = self._init_db()
 
         console.print(f"[green]✓[/green] RAG ready ({model}, {self._doc_count()} documents)")
 
     def _init_db(self) -> sqlite3.Connection:
-        """Initialize SQLite database with FTS5 and sqlite-vec."""
+        """Initialize SQLite database with FTS5 and sqlite-vec or ChromaDB fallback."""
         db = sqlite3.connect(str(self._db_path))
 
-        # Enable sqlite-vec extension
-        import sqlite_vec
-
-        db.enable_load_extension(True)
-        sqlite_vec.load(db)
-        db.enable_load_extension(False)
-
-        # Chunks table — stores text and metadata
         db.execute("""
             CREATE TABLE IF NOT EXISTS chunks (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -118,17 +113,46 @@ class RAG:
             )
         """)
 
-        # FTS5 virtual table for keyword search (BM25)
         db.execute("""
             CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts
             USING fts5(content, content_rowid='id')
         """)
 
-        # Vector table for semantic search
-        db.execute(f"""
-            CREATE VIRTUAL TABLE IF NOT EXISTS chunks_vec
-            USING vec0(embedding float[{self._embedding_dim}])
-        """)
+        try:
+            import sqlite_vec
+
+            db.enable_load_extension(True)
+            sqlite_vec.load(db)
+            db.enable_load_extension(False)
+
+            db.execute(f"""
+                CREATE VIRTUAL TABLE IF NOT EXISTS chunks_vec
+                USING vec0(embedding float[{self._embedding_dim}])
+            """)
+
+            self._vector_backend = "sqlite-vec"
+            console.print("[dim]Vector search via sqlite-vec[/dim]")
+
+        except (AttributeError, sqlite3.OperationalError) as e:
+            console.print(f"[dim]sqlite-vec unavailable ({type(e).__name__}), falling back to ChromaDB...[/dim]")
+
+            import chromadb
+
+            chroma_dir = self._db_path.parent / "chroma_db"
+            chroma_dir.mkdir(parents=True, exist_ok=True)
+
+            self._chroma_client = chromadb.PersistentClient(path=str(chroma_dir))
+            self._chroma_collection = self._chroma_client.get_or_create_collection(
+                "chunks_vec",
+                metadata={"hnsw:space": "cosine"},
+            )
+            self._vector_backend = "chromadb"
+            console.print("[dim]Vector search via ChromaDB[/dim]")
+
+            try:
+                db.execute("DROP TABLE IF EXISTS chunks_vec")
+            except sqlite3.OperationalError:
+                pass
 
         db.commit()
         return db
@@ -164,24 +188,44 @@ class RAG:
         embeddings = self._embedder.encode(chunks, show_progress_bar=False)
 
         # Insert into database
+        chroma_ids = []
+        chroma_embeddings = []
+        chroma_metadatas = []
+        chroma_documents = []
+
         for i, (text, emb) in enumerate(zip(chunks, embeddings)):
-            # Insert chunk text
             cursor = self._db.execute(
                 "INSERT INTO chunks (doc_hash, doc_path, chunk_index, content) VALUES (?, ?, ?, ?)",
                 (doc_hash, str(path), i, text),
             )
             row_id = cursor.lastrowid
 
-            # Insert into FTS5
             self._db.execute(
                 "INSERT INTO chunks_fts (rowid, content) VALUES (?, ?)",
                 (row_id, text),
             )
 
-            # Insert embedding vector
-            self._db.execute(
-                "INSERT INTO chunks_vec (rowid, embedding) VALUES (?, ?)",
-                (row_id, _serialize_vector(emb.tolist())),
+            if self._vector_backend == "sqlite-vec":
+                self._db.execute(
+                    "INSERT INTO chunks_vec (rowid, embedding) VALUES (?, ?)",
+                    (row_id, _serialize_vector(emb.tolist())),
+                )
+            else:
+                chroma_ids.append(f"chunk_{row_id}")
+                chroma_embeddings.append(emb.tolist())
+                chroma_metadatas.append({
+                    "doc_hash": doc_hash,
+                    "doc_path": str(path),
+                    "chunk_index": i,
+                })
+                chroma_documents.append(text)
+
+        if self._vector_backend == "chromadb" and chroma_ids:
+            self._chroma_collection.add(
+                ids=chroma_ids,
+                embeddings=chroma_embeddings,
+                documents=chroma_documents,
+                metadatas=chroma_metadatas,
             )
 
         self._db.commit()
@@ -270,22 +314,34 @@ class RAG:
         return results
 
     def _vector_search(self, query_vec, limit: int) -> dict[int, float]:
-        """Cosine similarity search via sqlite-vec."""
+        """Cosine similarity search via sqlite-vec or ChromaDB."""
         results = {}
-        rows = self._db.execute(
-            """
-            SELECT rowid, distance
-            FROM chunks_vec
-            WHERE embedding MATCH ?
-            ORDER BY distance
-            LIMIT ?
-            """,
-            (_serialize_vector(query_vec.tolist()), limit),
-        ).fetchall()
 
-        for row_id, distance in rows:
-            # sqlite-vec returns distance; convert to similarity (1 - distance for cosine)
-            results[row_id] = max(0.0, 1.0 - distance)
+        if self._vector_backend == "sqlite-vec":
+            rows = self._db.execute(
+                """
+                SELECT rowid, distance
+                FROM chunks_vec
+                WHERE embedding MATCH ?
+                ORDER BY distance
+                LIMIT ?
+                """,
+                (_serialize_vector(query_vec.tolist()), limit),
+            ).fetchall()
+            for row_id, distance in rows:
+                results[row_id] = max(0.0, 1.0 - distance)
+        else:
+            query_results = self._chroma_collection.query(
+                query_embeddings=[query_vec.tolist()],
+                n_results=limit,
+                include=["distances"],
+            )
+            if query_results["ids"] and query_results["ids"][0]:
+                for chroma_id, distance in zip(
+                    query_results["ids"][0], query_results["distances"][0]
+                ):
+                    row_id = int(chroma_id.split("_")[1])
+                    results[row_id] = max(0.0, 1.0 - distance)
 
         return results
 
@@ -352,9 +408,14 @@ class RAG:
 
         ids = [r[0] for r in rows]
 
+        if self._vector_backend == "chromadb":
+            chroma_ids = [f"chunk_{row_id}" for row_id in ids]
+            self._chroma_collection.delete(ids=chroma_ids)
+
         for row_id in ids:
             self._db.execute("DELETE FROM chunks_fts WHERE rowid = ?", (row_id,))
-            self._db.execute("DELETE FROM chunks_vec WHERE rowid = ?", (row_id,))
+            if self._vector_backend == "sqlite-vec":
+                self._db.execute("DELETE FROM chunks_vec WHERE rowid = ?", (row_id,))
 
         self._db.execute("DELETE FROM chunks WHERE doc_hash = ?", (doc_hash,))
         self._db.commit()

@@ -41,7 +41,7 @@ dependencies = [
     "pymupdf",
     "python-docx",
     # RAG (SQLite-based, inspired by OpenClaw)
-    "sqlite-vec",
+    "chromadb>=0.4.22",
     "sentence-transformers",
     # CLI & UI
     "rich",
