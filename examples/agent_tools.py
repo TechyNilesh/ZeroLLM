@@ -2,7 +2,7 @@
 
 from zerollm import Agent
 
-agent = Agent("HuggingFaceTB/SmolLM2-1.7B-Instruct")
+agent = Agent("Qwen/Qwen3-0.6B")
 
 
 @agent.tool

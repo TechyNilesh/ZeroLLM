@@ -1,7 +1,7 @@
 """Model resolver — resolves a model string to a loadable path.
 
 Handles three cases:
-    1. Registry model:  "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+    1. Registry model:  "Qwen/Qwen3-0.6B"
     2. Local GGUF file: "/path/to/model.gguf"
     3. Fine-tuned dir:  "~/.cache/zerollm/models/my-bot" (or any dir with adapter_config.json)
 """

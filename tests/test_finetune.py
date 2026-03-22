@@ -14,7 +14,7 @@ def _mock_finetuner(**kwargs):
 
 def test_finetuner_init():
     tuner = _mock_finetuner()
-    assert tuner.model_name == "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+    assert tuner.model_name == "Qwen/Qwen3-0.6B"
     assert tuner.lora_r == 16
     assert tuner.lora_alpha == 32
 
@@ -35,8 +35,8 @@ def test_finetuner_resolve_base_repo():
     """FineTuner should use hf_base_repo from registry, not hardcoded mapping."""
     tuner = _mock_finetuner()
     from zerollm.registry import lookup
-    info = lookup("HuggingFaceTB/SmolLM2-1.7B-Instruct")
-    assert info.hf_base_repo == "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+    info = lookup("Qwen/Qwen3-0.6B")
+    assert info.hf_base_repo == "Qwen/Qwen3-0.6B"
 
 
 def test_finetuner_all_models_have_base_repo():

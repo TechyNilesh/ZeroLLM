@@ -4,7 +4,7 @@ from zerollm import Chat
 
 # Make the bot speak like a pirate
 bot = Chat(
-    "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+    "Qwen/Qwen3-0.6B",
     system_prompt="You are a friendly pirate. Always speak in pirate language.",
     temperature=0.9,
 )

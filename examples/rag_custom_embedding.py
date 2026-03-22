@@ -8,7 +8,7 @@ from zerollm import RAG
 
 # ── Default embedding (fast, 384 dimensions) ──
 
-rag_fast = RAG("HuggingFaceTB/SmolLM2-1.7B-Instruct")
+rag_fast = RAG("Qwen/Qwen3-0.6B")
 # Uses: all-MiniLM-L6-v2 (default)
 # Size: ~80MB, fast, good for most use cases
 
@@ -16,7 +16,7 @@ rag_fast = RAG("HuggingFaceTB/SmolLM2-1.7B-Instruct")
 # ── Better quality embedding (slower, 384 dimensions) ──
 
 rag_quality = RAG(
-    "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+    "Qwen/Qwen3-0.6B",
     embedding_model="BAAI/bge-small-en-v1.5",
     db_path="./rag_quality.db",  # separate DB for different embeddings
 )
@@ -26,7 +26,7 @@ rag_quality = RAG(
 # ── Multilingual embedding (supports 100+ languages) ──
 
 rag_multi = RAG(
-    "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+    "Qwen/Qwen3-0.6B",
     embedding_model="sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
     db_path="./rag_multilingual.db",
 )
@@ -36,7 +36,7 @@ rag_multi = RAG(
 # ── Large embedding for best quality (slower, 1024 dimensions) ──
 
 rag_best = RAG(
-    "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+    "Qwen/Qwen3-0.6B",
     embedding_model="BAAI/bge-large-en-v1.5",
     db_path="./rag_best.db",
 )
@@ -52,7 +52,7 @@ print(rag_fast.ask("What is the return policy?"))
 
 # Small chunks for Q&A / FAQ documents
 rag_faq = RAG(
-    "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+    "Qwen/Qwen3-0.6B",
     chunk_size=200,       # smaller chunks = more precise retrieval
     chunk_overlap=40,
     top_k=3,              # fewer results needed
@@ -60,7 +60,7 @@ rag_faq = RAG(
 
 # Large chunks for long-form documents (reports, books)
 rag_reports = RAG(
-    "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+    "Qwen/Qwen3-0.6B",
     chunk_size=800,       # bigger chunks = more context per result
     chunk_overlap=150,
     top_k=5,

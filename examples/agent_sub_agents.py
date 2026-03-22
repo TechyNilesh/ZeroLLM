@@ -10,7 +10,7 @@ from zerollm import Agent
 
 # Research agent — good at finding information
 researcher = Agent(
-    "Qwen/Qwen2.5-1.5B-Instruct",
+    "Qwen/Qwen3-1.7B",
     name="researcher",
     system_prompt="You are a research assistant. Find and summarize information accurately.",
 )
@@ -28,7 +28,7 @@ def read_url(url: str) -> str:
 
 # Writer agent — good at composing text
 writer = Agent(
-    "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+    "Qwen/Qwen3-0.6B",
     name="writer",
     system_prompt="You are a skilled writer. Write clear, engaging content.",
 )
@@ -43,7 +43,7 @@ def save_draft(title: str, content: str) -> str:
 # ── Create the main orchestrator agent ──
 
 main = Agent(
-    "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+    "Qwen/Qwen3-0.6B",
     name="orchestrator",
     system_prompt=(
         "You are a project manager agent. You have two sub-agents: "

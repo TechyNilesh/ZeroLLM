@@ -60,7 +60,7 @@ def _mock_agent(**kwargs):
     from zerollm.resolver import ResolvedModel
 
     mock_resolved = ResolvedModel(
-        name=kwargs.get("model", "HuggingFaceTB/SmolLM2-1.7B-Instruct"),
+        name=kwargs.get("model", "Qwen/Qwen3-0.6B"),
         path="/fake/model.gguf",
         context_length=8192,
         source="registry",
@@ -81,7 +81,7 @@ def _mock_agent(**kwargs):
 
 def test_agent_init():
     agent = _mock_agent()
-    assert agent.model_name == "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+    assert agent.model_name == "Qwen/Qwen3-0.6B"
     assert len(agent._tools) == 0
 
 

@@ -9,10 +9,10 @@ from zerollm.resolver import resolve, ResolvedModel
 
 
 def test_resolve_registry_model():
-    resolved = resolve("HuggingFaceTB/SmolLM2-1.7B-Instruct")
+    resolved = resolve("Qwen/Qwen3-0.6B")
     assert resolved.source == "registry"
-    assert resolved.name == "HuggingFaceTB/SmolLM2-1.7B-Instruct"
-    assert resolved.context_length == 8192
+    assert resolved.name == "Qwen/Qwen3-0.6B"
+    assert resolved.context_length == 32768
     assert resolved.supports_tools is True
 
 
@@ -38,7 +38,7 @@ def test_resolve_finetuned_adapter_dir(tmp_path):
     adapter_dir = tmp_path / "my-bot"
     adapter_dir.mkdir()
     (adapter_dir / "adapter_config.json").write_text(json.dumps({
-        "base_model_name_or_path": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+        "base_model_name_or_path": "Qwen/Qwen3-0.6B",
         "r": 16,
     }))
 

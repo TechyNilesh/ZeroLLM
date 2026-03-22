@@ -23,7 +23,7 @@ One `pip install`. Auto-detects your hardware. Downloads the right model. You're
 ```python
 from zerollm import Chat
 
-bot = Chat("HuggingFaceTB/SmolLM2-1.7B-Instruct")
+bot = Chat("Qwen/Qwen3-0.6B")
 print(bot.ask("What is the capital of France?"))
 ```
 
@@ -42,7 +42,7 @@ pip install zerollm
 ```python
 from zerollm import Chat
 
-bot = Chat("HuggingFaceTB/SmolLM2-1.7B-Instruct")
+bot = Chat("Qwen/Qwen3-0.6B")
 
 # Ask
 print(bot.ask("Explain quantum computing in one sentence"))
@@ -60,7 +60,7 @@ bot.chat()
 ```python
 from zerollm import Agent
 
-agent = Agent("HuggingFaceTB/SmolLM2-1.7B-Instruct")
+agent = Agent("Qwen/Qwen3-0.6B")
 
 @agent.tool
 def get_weather(city: str) -> str:
@@ -73,13 +73,13 @@ print(agent.ask("What's the weather in Auckland?"))
 ### Sub-Agents
 
 ```python
-researcher = Agent("Qwen/Qwen2.5-1.5B-Instruct", name="researcher")
+researcher = Agent("Qwen/Qwen3-1.7B", name="researcher")
 
 @researcher.tool
 def search(query: str) -> str:
     return f"Results for: {query}"
 
-main = Agent("HuggingFaceTB/SmolLM2-1.7B-Instruct")
+main = Agent("Qwen/Qwen3-0.6B")
 main.add_agent("researcher", researcher, "Research any topic")
 
 main.ask("Research the latest AI trends")
@@ -90,7 +90,7 @@ main.ask("Research the latest AI trends")
 ```python
 from zerollm import Server
 
-Server("HuggingFaceTB/SmolLM2-1.7B-Instruct", port=8080).serve()
+Server("Qwen/Qwen3-0.6B", port=8080).serve()
 ```
 
 OpenAI-compatible. Works with any client that speaks the OpenAI API.
@@ -100,7 +100,7 @@ OpenAI-compatible. Works with any client that speaks the OpenAI API.
 ```python
 from zerollm import FineTuner
 
-tuner = FineTuner("HuggingFaceTB/SmolLM2-1.7B-Instruct")
+tuner = FineTuner("Qwen/Qwen3-0.6B")
 tuner.train("my_data.csv", epochs=3)
 tuner.save("my-bot")
 ```
@@ -119,7 +119,7 @@ Server("my-bot", port=8080).serve() # or serve it
 ```python
 from zerollm import RAG
 
-rag = RAG("HuggingFaceTB/SmolLM2-1.7B-Instruct")
+rag = RAG("Qwen/Qwen3-0.6B")
 rag.add("docs.pdf")
 print(rag.ask("What is the refund policy?"))
 ```
@@ -130,8 +130,8 @@ Powered by SQLite + sqlite-vec. No external database needed.
 
 ```bash
 zerollm recommend                                          # best model for your hardware
-zerollm chat HuggingFaceTB/SmolLM2-1.7B-Instruct          # interactive chat
-zerollm serve HuggingFaceTB/SmolLM2-1.7B-Instruct         # start API server
+zerollm chat Qwen/Qwen3-0.6B          # interactive chat
+zerollm serve Qwen/Qwen3-0.6B         # start API server
 zerollm list                                               # all available models
 zerollm doctor                                             # diagnose setup
 ```
@@ -151,7 +151,7 @@ zerollm doctor                                             # diagnose setup
 Works with any GGUF model from Hugging Face. Pass the full HF model name or a local `.gguf` file:
 
 ```python
-Chat("HuggingFaceTB/SmolLM2-1.7B-Instruct")  # from registry
+Chat("Qwen/Qwen3-0.6B")  # from registry
 Chat("/path/to/any-model.gguf")                # local file
 Chat("my-finetuned-bot")                       # your fine-tuned model
 ```

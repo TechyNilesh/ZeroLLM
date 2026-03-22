@@ -6,17 +6,17 @@ from zerollm.registry import lookup, list_models, recommend_for
 
 
 def test_lookup_valid_model():
-    info = lookup("HuggingFaceTB/SmolLM2-1.7B-Instruct")
-    assert info.name == "HuggingFaceTB/SmolLM2-1.7B-Instruct"
-    assert info.size_mb == 1100
+    info = lookup("Qwen/Qwen3-0.6B")
+    assert info.name == "Qwen/Qwen3-0.6B"
+    assert info.size_mb == 400
     assert info.supports_tools is True
 
 
 def test_lookup_all_models():
     models = list_models()
-    assert len(models) == 7
+    assert len(models) == 6
     names = [m.name for m in models]
-    assert "HuggingFaceTB/SmolLM2-1.7B-Instruct" in names
+    assert "Qwen/Qwen3-0.6B" in names
     assert "TinyLlama/TinyLlama-1.1B-Chat-v1.0" in names
     assert "microsoft/Phi-3-mini-4k-instruct" in names
 
@@ -48,8 +48,8 @@ def test_model_size_label():
 
 
 def test_hf_base_repo_present():
-    info = lookup("HuggingFaceTB/SmolLM2-1.7B-Instruct")
-    assert info.hf_base_repo == "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+    info = lookup("Qwen/Qwen3-0.6B")
+    assert info.hf_base_repo == "Qwen/Qwen3-0.6B"
 
     info = lookup("microsoft/Phi-3-mini-4k-instruct")
     assert info.hf_base_repo == "microsoft/Phi-3-mini-4k-instruct"

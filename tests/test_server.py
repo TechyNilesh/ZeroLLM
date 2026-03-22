@@ -10,7 +10,7 @@ def _create_test_app():
     from zerollm.resolver import ResolvedModel
 
     mock_resolved = ResolvedModel(
-        name="HuggingFaceTB/SmolLM2-1.7B-Instruct",
+        name="Qwen/Qwen3-0.6B",
         path="/fake/model.gguf",
         context_length=8192,
         source="registry",
@@ -25,14 +25,14 @@ def _create_test_app():
         mock_backend.return_value = mock_instance
 
         from zerollm.server import Server
-        server = Server(model="HuggingFaceTB/SmolLM2-1.7B-Instruct")
+        server = Server(model="Qwen/Qwen3-0.6B")
         server._mock_backend = mock_instance
         return server
 
 
 def test_server_init():
     server = _create_test_app()
-    assert server.model_name == "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+    assert server.model_name == "Qwen/Qwen3-0.6B"
     assert server.app is not None
 
 
@@ -46,7 +46,7 @@ def test_health_endpoint():
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"
-    assert data["model"] == "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+    assert data["model"] == "Qwen/Qwen3-0.6B"
 
 
 def test_list_models_endpoint():
@@ -60,7 +60,7 @@ def test_list_models_endpoint():
     data = response.json()
     assert data["object"] == "list"
     assert len(data["data"]) == 1
-    assert data["data"][0]["id"] == "HuggingFaceTB/SmolLM2-1.7B-Instruct"
+    assert data["data"][0]["id"] == "Qwen/Qwen3-0.6B"
 
 
 def test_chat_completions_endpoint():
@@ -70,7 +70,7 @@ def test_chat_completions_endpoint():
     client = TestClient(server.app)
 
     response = client.post("/v1/chat/completions", json={
-        "model": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+        "model": "Qwen/Qwen3-0.6B",
         "messages": [{"role": "user", "content": "Hello"}],
     })
     assert response.status_code == 200
@@ -105,7 +105,7 @@ def test_chat_completions_streaming():
     client = TestClient(server.app)
 
     response = client.post("/v1/chat/completions", json={
-        "model": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+        "model": "Qwen/Qwen3-0.6B",
         "messages": [{"role": "user", "content": "Hi"}],
         "stream": True,
     })

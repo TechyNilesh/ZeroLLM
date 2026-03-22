@@ -2,7 +2,7 @@
 
 from zerollm import FineTuner
 
-tuner = FineTuner("HuggingFaceTB/SmolLM2-1.7B-Instruct")
+tuner = FineTuner("Qwen/Qwen3-0.6B")
 
 # Train from a list
 tuner.train([

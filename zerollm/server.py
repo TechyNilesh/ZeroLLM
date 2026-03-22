@@ -14,7 +14,7 @@ class Server:
     """Serve a local LLM as an OpenAI-compatible API.
 
     Usage:
-        Server("HuggingFaceTB/SmolLM2-1.7B-Instruct", port=8080).serve()
+        Server("Qwen/Qwen3-0.6B", port=8080).serve()
 
     Endpoints:
         POST /v1/chat/completions  — chat completions
@@ -25,7 +25,7 @@ class Server:
 
     def __init__(
         self,
-        model: str = "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+        model: str = "Qwen/Qwen3-0.6B",
         power: float = 1.0,
         port: int = 8000,
         host: str = "0.0.0.0",

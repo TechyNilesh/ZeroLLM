@@ -13,7 +13,7 @@ class ModelInfo:
 
     name: str
     hf_repo: str  # GGUF repo (e.g. bartowski/SmolLM2-1.7B-Instruct-GGUF)
-    hf_base_repo: str  # Original HF repo for fine-tuning (e.g. HuggingFaceTB/SmolLM2-1.7B-Instruct)
+    hf_base_repo: str  # Original HF repo for fine-tuning (e.g. Qwen/Qwen3-0.6B)
     filename: str
     size_mb: int
     min_ram_gb: float

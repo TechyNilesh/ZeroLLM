@@ -20,10 +20,10 @@ def test_cli_list_downloaded():
 
 
 def test_cli_info():
-    result = runner.invoke(app, ["info", "HuggingFaceTB/SmolLM2-1.7B-Instruct"])
+    result = runner.invoke(app, ["info", "Qwen/Qwen3-0.6B"])
     assert result.exit_code == 0
-    assert "SmolLM2" in result.output
-    assert "1.1GB" in result.output or "1100" in result.output
+    assert "Qwen3" in result.output
+    assert "400MB" in result.output or "400" in result.output
 
 
 def test_cli_info_invalid_model():

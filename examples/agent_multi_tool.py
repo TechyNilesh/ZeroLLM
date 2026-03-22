@@ -3,7 +3,7 @@
 from zerollm import Agent
 
 agent = Agent(
-    "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+    "Qwen/Qwen3-0.6B",
     system_prompt="You are a helpful assistant with access to weather, math, and note tools.",
 )
 

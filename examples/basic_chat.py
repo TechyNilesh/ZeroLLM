@@ -3,7 +3,7 @@
 from zerollm import Chat
 
 # One line to start chatting
-bot = Chat("HuggingFaceTB/SmolLM2-1.7B-Instruct")
+bot = Chat("Qwen/Qwen3-0.6B")
 
 # Ask a question
 print(bot.ask("What is the capital of France?"))

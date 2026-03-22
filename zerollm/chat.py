@@ -18,7 +18,7 @@ class Chat:
     """Talk to a local LLM with zero configuration.
 
     Usage:
-        bot = Chat("HuggingFaceTB/SmolLM2-1.7B-Instruct")
+        bot = Chat("Qwen/Qwen3-0.6B")
         print(bot.ask("What is the capital of France?"))
 
         for token in bot.stream("Tell me a joke"):
@@ -29,7 +29,7 @@ class Chat:
 
     def __init__(
         self,
-        model: str = "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+        model: str = "Qwen/Qwen3-0.6B",
         power: float = 1.0,
         memory: bool = False,
         system_prompt: str | None = None,
@@ -41,7 +41,7 @@ class Chat:
         Args:
             model: Registry name, local GGUF path, or fine-tuned model directory.
                    Examples:
-                     "HuggingFaceTB/SmolLM2-1.7B-Instruct"  (registry)
+                     "Qwen/Qwen3-0.6B"  (registry)
                      "/path/to/model.gguf"                    (local GGUF)
                      "my-bot"                                 (fine-tuned, saved with FineTuner)
                      "~/.cache/zerollm/models/my-bot"         (fine-tuned, full path)

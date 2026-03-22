@@ -14,24 +14,24 @@ from zerollm.downloader import (
 
 
 def test_model_dir_simple_name():
-    d = _model_dir("HuggingFaceTB/SmolLM2-1.7B-Instruct")
-    assert "HuggingFaceTB_SmolLM2-1.7B-Instruct" in str(d)
+    d = _model_dir("Qwen/Qwen3-0.6B")
+    assert "Qwen_Qwen3-0.6B" in str(d)
 
 
-def test_model_dir_colon_name():
-    d = _model_dir("Qwen/Qwen2.5-0.5B-Instruct")
-    assert "Qwen_Qwen2.5-0.5B-Instruct" in str(d)
+def test_model_dir_with_dot():
+    d = _model_dir("Qwen/Qwen3-1.7B")
+    assert "Qwen_Qwen3-1.7B" in str(d)
 
 
 def test_model_path():
-    p = _model_path("HuggingFaceTB/SmolLM2-1.7B-Instruct", "model.gguf")
+    p = _model_path("Qwen/Qwen3-0.6B", "model.gguf")
     assert p.name == "model.gguf"
-    assert "HuggingFaceTB_SmolLM2-1.7B-Instruct" in str(p.parent)
+    assert "Qwen_Qwen3-0.6B" in str(p.parent)
 
 
 def test_is_cached_false():
     # Model should not be cached in test environment
-    assert is_cached("HuggingFaceTB/SmolLM2-1.7B-Instruct") is False
+    assert is_cached("Qwen/Qwen3-0.6B") is False
 
 
 def test_list_downloaded_empty():

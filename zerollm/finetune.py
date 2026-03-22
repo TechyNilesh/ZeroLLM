@@ -20,14 +20,14 @@ class FineTuner:
     Works on CPU and GPU. Uses peft + transformers under the hood.
 
     Usage:
-        tuner = FineTuner("HuggingFaceTB/SmolLM2-1.7B-Instruct")
+        tuner = FineTuner("Qwen/Qwen3-0.6B")
         tuner.train("my_data.csv", epochs=3)
         tuner.save("my-bot")
     """
 
     def __init__(
         self,
-        model: str = "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+        model: str = "Qwen/Qwen3-0.6B",
         power: float = 0.7,
         lora_r: int = 16,
         lora_alpha: int = 32,

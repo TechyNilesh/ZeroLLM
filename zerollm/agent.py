@@ -65,7 +65,7 @@ class Agent:
     Supports tools, sub-agents, and multi-turn conversations.
 
     Usage:
-        agent = Agent("HuggingFaceTB/SmolLM2-1.7B-Instruct")
+        agent = Agent("Qwen/Qwen3-0.6B")
 
         @agent.tool
         def get_weather(city: str) -> str:
@@ -74,13 +74,13 @@ class Agent:
         agent.ask("What is the weather in Auckland?")
 
     Sub-agents:
-        researcher = Agent("Qwen/Qwen2.5-1.5B-Instruct")
+        researcher = Agent("Qwen/Qwen3-1.7B")
 
         @researcher.tool
         def search(query: str) -> str:
             return f"Results for {query}"
 
-        main = Agent("HuggingFaceTB/SmolLM2-1.7B-Instruct")
+        main = Agent("Qwen/Qwen3-0.6B")
         main.add_agent("researcher", researcher, "Research any topic on the web")
 
         main.ask("Research the latest AI news")  # delegates to researcher
@@ -88,7 +88,7 @@ class Agent:
 
     def __init__(
         self,
-        model: str = "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+        model: str = "Qwen/Qwen3-0.6B",
         power: float = 1.0,
         system_prompt: str | None = None,
         max_tokens: int = 1024,
