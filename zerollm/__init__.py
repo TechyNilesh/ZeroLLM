@@ -1,6 +1,6 @@
 """ZeroLLM — Zero setup, zero config local LLMs on any hardware.
 
-Works with any GGUF model from HuggingFace.
+Works with any model from HuggingFace. Powered by HF transformers.
 
 Usage:
     from zerollm import Chat
@@ -8,10 +8,10 @@ Usage:
     print(bot.ask("Hello!"))
 """
 
-__version__ = "0.1.7"
+__version__ = "0.1.8"
 
 from zerollm.chat import Chat
-from zerollm.agent import Agent, SharedContext, Pipeline
+from zerollm.agent import Agent, SharedContext
 from zerollm.server import Server
 from zerollm.finetune import FineTuner
 from zerollm.rag import RAG
@@ -20,7 +20,6 @@ __all__ = [
     "Chat",
     "Agent",
     "SharedContext",
-    "Pipeline",
     "Server",
     "FineTuner",
     "RAG",
