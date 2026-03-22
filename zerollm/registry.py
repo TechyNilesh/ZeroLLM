@@ -30,7 +30,7 @@ class ModelInfo:
 
 
 # Default registry file shipped with the package
-_REGISTRY_PATH = Path(__file__).parent.parent / "registry.json"
+_REGISTRY_PATH = Path(__file__).parent / "registry.json"
 
 _cache: dict[str, ModelInfo] | None = None
 
