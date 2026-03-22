@@ -148,21 +148,15 @@ zerollm doctor                                             # diagnose setup
 
 ## Models
 
-| Model | Size | Min RAM |
-|-------|------|---------|
-| `Qwen/Qwen2.5-0.5B-Instruct` | 400MB | 3 GB |
-| `TinyLlama/TinyLlama-1.1B-Chat-v1.0` | 637MB | 3 GB |
-| `Qwen/Qwen2.5-1.5B-Instruct` | 900MB | 4 GB |
-| `HuggingFaceTB/SmolLM2-1.7B-Instruct` | 1.1GB | 4 GB |
-| `deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B` | 1.1GB | 4 GB |
-| `google/gemma-3-1b-it` | 500MB | 4 GB |
-| `microsoft/Phi-3-mini-4k-instruct` | 2.2GB | 6 GB |
-
-Or bring your own GGUF:
+Works with any GGUF model from Hugging Face. Pass the full HF model name or a local `.gguf` file:
 
 ```python
-Chat("/path/to/any-model.gguf")
+Chat("HuggingFaceTB/SmolLM2-1.7B-Instruct")  # from registry
+Chat("/path/to/any-model.gguf")                # local file
+Chat("my-finetuned-bot")                       # your fine-tuned model
 ```
+
+Run `zerollm list` to see curated models, or `zerollm recommend` to find the best one for your hardware.
 
 ## Architecture
 
@@ -195,4 +189,4 @@ pip install zerollm
 
 ## Author
 
-Built by [Nilesh Verma](https://github.com/TechyNilesh) in Auckland, NZ.
+Built by [Nilesh Verma](https://nileshverma.com/)
