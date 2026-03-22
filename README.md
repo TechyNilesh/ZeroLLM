@@ -160,28 +160,9 @@ Run `zerollm list` to see curated models, or `zerollm recommend` to find the bes
 
 ## Architecture
 
-```
-pip install zerollm
-        │
-        ▼
-   ┌─────────┐
-   │ registry │ ── model name → HF repo + GGUF file
-   └────┬────┘
-        ▼
-   ┌──────────┐
-   │ hardware │ ── auto-detect CPU/GPU/RAM
-   └────┬─────┘
-        ▼
-   ┌────────────┐
-   │ downloader │ ── fetch from HF Hub, cache locally
-   └─────┬──────┘
-        ▼
-   ┌─────────┐
-   │ backend │ ── llama-cpp-python (CPU/CUDA/Metal/ROCm)
-   └────┬────┘
-        ▼
-   Chat │ Agent │ Server │ FineTuner │ RAG
-```
+<p align="center">
+  <img src="assets/zerollm-architecture.png" alt="ZeroLLM Architecture" width="700">
+</p>
 
 ## License
 
