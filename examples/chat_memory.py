@@ -3,7 +3,7 @@
 from zerollm import Chat
 
 # Enable memory to persist conversation across turns
-bot = Chat("Qwen/Qwen3-0.6B", memory=True)
+bot = Chat("Qwen/Qwen3.5-4B", memory=True)
 
 # The bot remembers what you said
 print(bot.ask("My name is Nilesh and I live in Auckland"))

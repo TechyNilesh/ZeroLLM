@@ -6,7 +6,7 @@ from typing import Generator
 
 from rich.console import Console
 
-from zerollm.backend import LlamaBackend
+from zerollm.backend import HFBackend
 from zerollm.hardware import detect
 from zerollm.memory import Memory
 from zerollm.resolver import resolve
@@ -18,7 +18,7 @@ class Chat:
     """Talk to a local LLM with zero configuration.
 
     Usage:
-        bot = Chat("Qwen/Qwen3-0.6B")
+        bot = Chat("Qwen/Qwen3.5-4B")
         print(bot.ask("What is the capital of France?"))
 
         for token in bot.stream("Tell me a joke"):
@@ -29,7 +29,7 @@ class Chat:
 
     def __init__(
         self,
-        model: str = "Qwen/Qwen3-0.6B",
+        model: str = "Qwen/Qwen3.5-4B",
         power: float = 1.0,
         memory: bool = False,
         system_prompt: str | None = None,
@@ -41,7 +41,7 @@ class Chat:
         Args:
             model: Registry name, local GGUF path, or fine-tuned model directory.
                    Examples:
-                     "Qwen/Qwen3-0.6B"  (registry)
+                     "Qwen/Qwen3.5-4B"  (registry)
                      "/path/to/model.gguf"                    (local GGUF)
                      "my-bot"                                 (fine-tuned, saved with FineTuner)
                      "~/.cache/zerollm/models/my-bot"         (fine-tuned, full path)
@@ -62,8 +62,8 @@ class Chat:
         self.hw = detect()
 
         # Create backend
-        self.backend = LlamaBackend(
-            model_path=resolved.path,
+        self.backend = HFBackend(
+            model_name=resolved.model_id,
             context_length=resolved.context_length,
             power=power,
             hw=self.hw,
@@ -96,6 +96,7 @@ class Chat:
         )
 
         self.memory.add("assistant", response)
+        self.memory.maybe_summarize(backend=self.backend)
         return response
 
     def stream(self, prompt: str) -> Generator[str, None, None]:

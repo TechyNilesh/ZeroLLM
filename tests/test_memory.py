@@ -61,3 +61,48 @@ def test_clear_all():
     mem.clear_all()
 
     assert len(mem.messages) == 0
+
+
+# ── Auto-summarization tests ──
+
+def test_maybe_summarize_short_history():
+    """No summarization when history is short."""
+    mem = Memory(summarize_after=10)
+    mem.add("user", "Hello")
+    mem.add("assistant", "Hi")
+    assert mem.maybe_summarize() is False
+
+
+def test_maybe_summarize_no_backend():
+    """No summarization without a backend."""
+    mem = Memory(summarize_after=4)
+    for i in range(10):
+        mem.add("user", f"Message {i}")
+        mem.add("assistant", f"Reply {i}")
+    assert mem.maybe_summarize(backend=None) is False
+
+
+def test_has_summaries_false():
+    mem = Memory()
+    assert mem.has_summaries is False
+
+
+def test_context_includes_summaries():
+    mem = Memory()
+    mem._summaries = ["User's name is Nilesh. Works on AI."]
+    mem.add_system("You are helpful.")
+    mem.add("user", "What is my name?")
+
+    context = mem.get_context()
+    # Should have: system + summary + user message
+    assert len(context) == 3
+    assert "Summary" in context[1]["content"]
+    assert "Nilesh" in context[1]["content"]
+
+
+def test_turn_count():
+    mem = Memory()
+    mem.add("user", "Q1")
+    mem.add("assistant", "A1")
+    mem.add("user", "Q2")
+    assert mem.turn_count == 2

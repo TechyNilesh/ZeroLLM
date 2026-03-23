@@ -10,15 +10,15 @@ def _mock_chat(**kwargs):
     from zerollm.resolver import ResolvedModel
 
     mock_resolved = ResolvedModel(
-        name=kwargs.get("model", "Qwen/Qwen3-0.6B"),
-        path="/fake/model.gguf",
+        name=kwargs.get("model", "Qwen/Qwen3.5-4B"),
+        model_id="Qwen/Qwen3.5-4B",
         context_length=8192,
-        source="registry",
+        source="huggingface",
         supports_tools=True,
     )
 
     with patch("zerollm.chat.resolve", return_value=mock_resolved), \
-         patch("zerollm.chat.LlamaBackend") as mock_backend, \
+         patch("zerollm.chat.HFBackend") as mock_backend, \
          patch("zerollm.chat.console"):
 
         mock_instance = MagicMock()
@@ -31,7 +31,7 @@ def _mock_chat(**kwargs):
 
 def test_chat_init_default():
     bot = _mock_chat()
-    assert bot.model_name == "Qwen/Qwen3-0.6B"
+    assert bot.model_name == "Qwen/Qwen3.5-4B"
 
 
 def test_chat_init_custom_model():

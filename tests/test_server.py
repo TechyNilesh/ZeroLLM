@@ -10,29 +10,29 @@ def _create_test_app():
     from zerollm.resolver import ResolvedModel
 
     mock_resolved = ResolvedModel(
-        name="Qwen/Qwen3-0.6B",
-        path="/fake/model.gguf",
+        name="Qwen/Qwen3.5-4B",
+        model_id="Qwen/Qwen3.5-4B",
         context_length=8192,
-        source="registry",
+        source="huggingface",
         supports_tools=True,
     )
 
     with patch("zerollm.server.resolve", return_value=mock_resolved), \
-         patch("zerollm.server.LlamaBackend") as mock_backend:
+         patch("zerollm.server.HFBackend") as mock_backend:
 
         mock_instance = MagicMock()
         mock_instance.generate.return_value = "Hello from ZeroLLM!"
         mock_backend.return_value = mock_instance
 
         from zerollm.server import Server
-        server = Server(model="Qwen/Qwen3-0.6B")
+        server = Server(model="Qwen/Qwen3.5-4B")
         server._mock_backend = mock_instance
         return server
 
 
 def test_server_init():
     server = _create_test_app()
-    assert server.model_name == "Qwen/Qwen3-0.6B"
+    assert server.model_name == "Qwen/Qwen3.5-4B"
     assert server.app is not None
 
 
@@ -46,7 +46,7 @@ def test_health_endpoint():
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"
-    assert data["model"] == "Qwen/Qwen3-0.6B"
+    assert data["model"] == "Qwen/Qwen3.5-4B"
 
 
 def test_list_models_endpoint():
@@ -60,7 +60,7 @@ def test_list_models_endpoint():
     data = response.json()
     assert data["object"] == "list"
     assert len(data["data"]) == 1
-    assert data["data"][0]["id"] == "Qwen/Qwen3-0.6B"
+    assert data["data"][0]["id"] == "Qwen/Qwen3.5-4B"
 
 
 def test_chat_completions_endpoint():
@@ -70,7 +70,7 @@ def test_chat_completions_endpoint():
     client = TestClient(server.app)
 
     response = client.post("/v1/chat/completions", json={
-        "model": "Qwen/Qwen3-0.6B",
+        "model": "Qwen/Qwen3.5-4B",
         "messages": [{"role": "user", "content": "Hello"}],
     })
     assert response.status_code == 200
@@ -105,7 +105,7 @@ def test_chat_completions_streaming():
     client = TestClient(server.app)
 
     response = client.post("/v1/chat/completions", json={
-        "model": "Qwen/Qwen3-0.6B",
+        "model": "Qwen/Qwen3.5-4B",
         "messages": [{"role": "user", "content": "Hi"}],
         "stream": True,
     })

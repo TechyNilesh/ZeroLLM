@@ -20,14 +20,14 @@ class FineTuner:
     Works on CPU and GPU. Uses peft + transformers under the hood.
 
     Usage:
-        tuner = FineTuner("Qwen/Qwen3-0.6B")
+        tuner = FineTuner("Qwen/Qwen3.5-4B")
         tuner.train("my_data.csv", epochs=3)
         tuner.save("my-bot")
     """
 
     def __init__(
         self,
-        model: str = "Qwen/Qwen3-0.6B",
+        model: str = "Qwen/Qwen3.5-4B",
         power: float = 0.7,
         lora_r: int = 16,
         lora_alpha: int = 32,
@@ -60,13 +60,12 @@ class FineTuner:
         if self._model is not None:
             return
 
+        import re
         from transformers import AutoModelForCausalLM, AutoTokenizer
         from peft import LoraConfig, get_peft_model
 
-        from zerollm.registry import lookup
-
-        info = lookup(self.model_name)
-        hf_repo = info.hf_base_repo
+        # For fine-tuning we need the base HF model, not the GGUF version
+        hf_repo = re.sub(r"-GGUF$", "", self.model_name, flags=re.IGNORECASE)
 
         console.print(f"[dim]Loading base model from {hf_repo}...[/dim]")
 

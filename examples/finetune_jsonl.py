@@ -2,7 +2,7 @@
 
 from zerollm import FineTuner
 
-tuner = FineTuner("Qwen/Qwen3-0.6B", power=0.7)
+tuner = FineTuner("Qwen/Qwen3.5-4B", power=0.7)
 
 # Train from JSONL (one JSON object per line)
 # File format:

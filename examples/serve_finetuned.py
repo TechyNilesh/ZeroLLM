@@ -3,7 +3,7 @@
 from zerollm import FineTuner, Chat, Server
 
 # Step 1: Fine-tune
-tuner = FineTuner("Qwen/Qwen3-0.6B")
+tuner = FineTuner("Qwen/Qwen3.5-4B")
 tuner.train([
     {"prompt": "What is your refund policy?", "response": "Return within 30 days for a full refund."},
     {"prompt": "How do I contact support?", "response": "Email support@example.com or call 0800-123-456."},
